@@ -15,5 +15,5 @@
     "target": "ES2022",
     "types": ["@opennextjs/aws/types/global.d.ts"]
   },
-  "include": ["src/**/*.ts", "env.d.ts"]
+  "include": ["src/**/*.ts", "env.d.ts"],
 }

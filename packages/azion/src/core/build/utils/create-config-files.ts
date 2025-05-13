@@ -106,6 +106,6 @@ export async function createOpenNextConfigIfNotExistent(sourceDir: string): Prom
       throw new Error("The `open-next.config.ts` file is required, aborting!");
     }
 
-    cpSync(join(getPackageRuntimeDirPath(), "open-next.config.ts"), openNextConfigPath);
+    cpSync(join(getPackageRuntimeDirPath(), "../../templates", "open-next.config.ts"), openNextConfigPath);
   }
 }

@@ -1,10 +1,9 @@
-import { CacheValue } from "@opennextjs/aws/types/overrides.js";
+import { CacheValue, CacheEntryType } from "@opennextjs/aws/types/overrides.js";
 
-export type IncrementalCacheEntry<IsFetch extends boolean> = {
-  value: CacheValue<IsFetch>;
+export type IncrementalCacheEntry<CacheType extends CacheEntryType> = {
+  value: CacheValue<CacheType>;
   lastModified: number;
 };
-
 export const debugCache = (name: string, ...args: unknown[]) => {
   if (process.env.NEXT_PRIVATE_DEBUG_CACHE) {
     console.log(`[${name}] `, ...args);

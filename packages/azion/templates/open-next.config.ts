@@ -1,15 +1,9 @@
-const config = {
-  default: {
-    override: {
-      wrapper: "cloudflare-node", // TODO: create a wrapper for Azion on repository @opennextjs/aws
-      converter: "edge",
-      proxyExternalRequest: "fetch",
-      incrementalCache: async () => {}, // TODO: create a cache for Azion
-      tagCache: "dummy",
-      queue: "dummy",
-    },
-  },
-  edgeExternals: ["node:crypto"],
-};
+// default open-next.config.ts file created by @opennextjs/azion
+import { defineAzionConfig } from "@opennextjs/azion/config";
+import StorageIncrementalCache from "@opennextjs/azion/overrides/incremental-cache/storage-incremental-cache";
+import MemoryCacheQueue from "@opennextjs/azion/overrides/queue/memory-queue";
 
-export default config;
+export default defineAzionConfig({
+  incrementalCache: StorageIncrementalCache,
+  queue: MemoryCacheQueue,
+});

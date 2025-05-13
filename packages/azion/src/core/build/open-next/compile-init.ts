@@ -9,8 +9,8 @@ import { build } from "esbuild";
  */
 export async function compileInit(options: BuildOptions) {
   const currentDir = path.join(path.dirname(fileURLToPath(import.meta.url)));
-  const runtimeDir = path.join(currentDir, "../../runtime");
-  const initPath = path.join(runtimeDir, "init.js");
+  const Dir = path.join(currentDir, "../../runtime");
+  const initPath = path.join(Dir, "init.js");
 
   await build({
     entryPoints: [initPath],

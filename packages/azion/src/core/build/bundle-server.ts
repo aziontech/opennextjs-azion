@@ -103,7 +103,7 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       // Apply updater updates, must be the last plugin
       updater.plugin,
     ] as Plugin[],
-    external: ["./middleware/handler.mjs", "*.wasm"],
+    external: ["./middleware/handler.mjs", "*.wasm", "azion:storage"],
     alias: {
       // Note: it looks like node-fetch is actually not necessary for us, so we could replace it with an empty shim
       //       but just to be safe we replace it with a module that re-exports the native fetch
@@ -178,6 +178,11 @@ export async function updateWorkerBundledCode(
       "`require.resolve` call",
       // workers do not support dynamic require nor require.resolve
       (code) => code.replace('require.resolve("./cache.cjs")', '"unused"'),
+    ],
+    [
+      "`require.resolve composable cache` call",
+      // workers do not support dynamic require nor require.resolve
+      (code) => code.replace('require.resolve("./composable-cache.cjs")', '"unused"'),
     ],
   ]);
 

@@ -3,6 +3,8 @@ import { runWithAzionRequestContext } from "./azion/init.js";
 
 // export { DOQueueHandler } from "./.build/durable-objects/queue.js";
 // export { DOShardedTagCache } from "./.build/durable-objects/sharded-tag-cache.js";
+export const BUCKET_NAME = (globalThis as any).AZION_BUCKET_NAME ?? "";
+const StorageInstance = new (globalThis as any).Azion.Storage(BUCKET_NAME);
 
 export default {
   // TODO: create types for this
@@ -14,6 +16,9 @@ export default {
     };
     env = {
       ...env,
+      AZION: {
+        Storage: StorageInstance,
+      },
       ASSETS: {
         fetch: getStorageAsset,
       },
@@ -53,7 +58,6 @@ export default {
       if (url.pathname.match(assetRegex)) {
         return env.ASSETS?.fetch(event.request);
       }
-
       // @ts-expect-error: resolved by wrangler build
       const { handler } = await import("./server-functions/default/handler.mjs");
 

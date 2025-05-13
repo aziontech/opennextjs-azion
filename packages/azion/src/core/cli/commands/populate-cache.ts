@@ -28,7 +28,7 @@ import { globSync } from "glob";
 import {
   CACHE_DIR as STATIC_ASSETS_CACHE_DIR,
   NAME as STATIC_ASSETS_CACHE_NAME,
-} from "../../overrides/incremental-cache/static-assets-incremental-cache.js";
+} from "../../overrides/incremental-cache/storage-incremental-cache.js";
 // import {
 //   BINDING_NAME as D1_TAG_BINDING_NAME,
 //   NAME as D1_TAG_NAME,

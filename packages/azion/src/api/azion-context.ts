@@ -1,7 +1,4 @@
 declare global {
-  type Fetcher = {
-    fetch: (url: string, init?: RequestInit) => Promise<Response>;
-  };
   interface ExecutionContext {
     waitUntil(promise: Promise<any>): void;
     passThroughOnException(): void;
@@ -10,11 +7,14 @@ declare global {
 
   interface AzionEnv {
     // Asset binding
-    ASSETS?: Fetcher;
+    ASSETS?: any;
 
     // Environment to use when loading Next `.env` files
     // Default to "production"
     NEXTJS_ENV?: string;
+
+    // Storage binding for the incremental cache
+    AZION?: any;
 
     // KV used for the incremental cache
     // NEXT_INC_CACHE_KV?: KVNamespace;
