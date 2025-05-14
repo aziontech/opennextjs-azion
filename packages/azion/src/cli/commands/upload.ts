@@ -1,7 +1,7 @@
 import { BuildOptions } from "@opennextjs/aws/build/helper.js";
 import { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 
-import { getWranglerEnvironmentFlag, runBundler } from "../../utils/run-bundler.js";
+import { getWranglerEnvironmentFlag, runBundler } from "../../core/utils/run-bundler.js";
 import { populateCache } from "./populate-cache.js";
 
 export async function upload(

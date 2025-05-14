@@ -29,10 +29,10 @@ export default {
       // Issue: https://github.com/opennextjs/opennextjs-aws/issues/848
       event.request.headers.set("x-original-url", url.pathname);
       // Serve images in development.
-      // Note: "/cdn-cgi/image/..." requests do not reach production workers.
+      // Note: "/data-cache/image/..." requests do not reach production workers.
       // TODO: check this
-      if (url.pathname.startsWith("/cdn-cgi/image/")) {
-        const m = url.pathname.match(/\/cdn-cgi\/image\/.+?\/(?<url>.+)$/);
+      if (url.pathname.startsWith("/data-cache/image/")) {
+        const m = url.pathname.match(/\/data-cache\/image\/.+?\/(?<url>.+)$/);
         if (m === null) {
           return new Response("Not Found!", { status: 404 });
         }

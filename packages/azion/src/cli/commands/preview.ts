@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import { BuildOptions } from "@opennextjs/aws/build/helper.js";
 import { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 
-import { runBundler } from "../../utils/run-bundler.js";
+import { runBundler } from "../../core/utils/run-bundler.js";
 import path from "path";
 import { cpSync, existsSync, rmSync } from "fs";
 import { populateCache } from "./populate-cache.js";

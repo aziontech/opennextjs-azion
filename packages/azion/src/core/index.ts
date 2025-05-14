@@ -7,13 +7,13 @@ import { normalizeOptions } from "@opennextjs/aws/build/helper.js";
 import { printHeader, showWarningOnWindows } from "@opennextjs/aws/build/utils.js";
 import logger from "@opennextjs/aws/logger.js";
 
-import { Arguments, getArgs } from "./cli/args.js";
+import { Arguments, getArgs } from "../cli/args.js";
 import { build } from "./build/build.js";
 import { createOpenNextConfigIfNotExistent, ensureAzionConfig } from "./build/utils/index.js";
-import { deploy } from "./cli/commands/deploy.js";
-import { populateCache } from "./cli/commands/populate-cache.js";
-import { preview } from "./cli/commands/preview.js";
-import { upload } from "./cli/commands/upload.js";
+import { deploy } from "../cli/commands/deploy.js";
+import { populateCache } from "../cli/commands/populate-cache.js";
+import { preview } from "../cli/commands/preview.js";
+import { upload } from "../cli/commands/upload.js";
 
 const nextAppDir = process.cwd();
 

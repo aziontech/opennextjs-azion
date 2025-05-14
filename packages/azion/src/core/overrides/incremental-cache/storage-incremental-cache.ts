@@ -10,8 +10,8 @@ import { IgnorableError, RecoverableError } from "@opennextjs/aws/utils/error.js
 import { debugCache, FALLBACK_BUILD_ID } from "../internal.js";
 import { getAzionContext } from "../../../api/azion-context.js";
 
-//  Assets inside `cdn-cgi/...` are only accessible by the worker.
-export const CACHE_DIR = "cdn-cgi/_next_cache";
+//  Assets inside `data-cache/...` are only accessible by the worker.
+export const CACHE_DIR = "data-cache/_next_cache";
 
 export const NAME = "az-storage-incremental-cache";
 
@@ -56,7 +56,6 @@ class StorageIncrementalCache implements IncrementalCache {
     try {
       debugCache(`Set ${key}`, cacheType);
 
-      // if (!this.azionCtx || !this.bucket) throw new IgnorableError(`Failed to set bucket`);
       const timestamp = Date.now();
       await getAzionContext().env.AZION.Storage.put(
         this.getAssetUrl(key, cacheType),
@@ -65,7 +64,7 @@ class StorageIncrementalCache implements IncrementalCache {
           // __BUILD_TIMESTAMP_MS__ is injected by ESBuild.
           lastModified: timestamp,
         }),
-        { metadata: { id: timestamp } }
+        { metadata: { lastModified: timestamp } }
       );
     } catch (e) {
       throw new RecoverableError(`Failed to set cache [${key}]`);

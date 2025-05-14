@@ -2,7 +2,7 @@ import { mkdirSync, type Stats, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
-import { getWranglerEnvironmentFlag } from "../utils/run-bundler.js";
+import { getWranglerEnvironmentFlag } from "../core/utils/run-bundler.js";
 
 export type Arguments = (
   | {
