@@ -13,7 +13,7 @@ import { getAzionContext } from "../../../api/azion-context.js";
 //  Assets inside `data-cache/...` are only accessible by the worker.
 export const CACHE_DIR = "data-cache/_next_cache";
 
-export const NAME = "az-storage-incremental-cache";
+export const NAME = "azion-storage-incremental-cache";
 
 /**
  * This cache uses Workers storage.
@@ -29,18 +29,22 @@ class StorageIncrementalCache implements IncrementalCache {
     debugCache(`Get ${key}`, cacheType);
 
     try {
-      const value = await getAzionContext().env.AZION.Storage.get(this.getAssetUrl(key, cacheType));
+      const azionContext = getAzionContext().env;
+      const keyURL = this.getCacheURL(key, cacheType, azionContext.AZION.BUCKET_PREFIX);
+      const cacheValue = await azionContext.AZION.Storage.get(keyURL);
+      if (!cacheValue) throw new IgnorableError(`Cache miss for ${key}`);
 
-      if (!value || !value.content) throw new IgnorableError(`Cache miss for ${key}`);
+      const cacheContentArray = await cacheValue.arrayBuffer();
 
-      const cacheValue = JSON.parse(value.content) as CacheValue<CacheType>;
+      const decoder = new TextDecoder();
+      const cacheContent = JSON.parse(decoder.decode(cacheContentArray));
 
       return {
-        value: cacheValue,
+        value: cacheContent,
         // __BUILD_TIMESTAMP_MS__ is injected by ESBuild.
-        lastModified:
-          (cacheValue as any).lastModified ??
-          (globalThis as { __BUILD_TIMESTAMP_MS__?: number }).__BUILD_TIMESTAMP_MS__,
+        lastModified: cacheContent.lastModified
+          ? Number(cacheContent.lastModified)
+          : (globalThis as { __BUILD_TIMESTAMP_MS__?: number }).__BUILD_TIMESTAMP_MS__,
       };
     } catch (e) {
       error("Failed to get from cache", e);
@@ -55,17 +59,23 @@ class StorageIncrementalCache implements IncrementalCache {
   ): Promise<void> {
     try {
       debugCache(`Set ${key}`, cacheType);
+      const azionContext = getAzionContext().env;
 
       const timestamp = Date.now();
-      await getAzionContext().env.AZION.Storage.put(
-        this.getAssetUrl(key, cacheType),
-        JSON.stringify({
-          ...value,
-          // __BUILD_TIMESTAMP_MS__ is injected by ESBuild.
-          lastModified: timestamp,
-        }),
-        { metadata: { lastModified: timestamp } }
-      );
+
+      const newCacheValue = JSON.stringify({
+        ...value,
+        // __BUILD_TIMESTAMP_MS__ is injected by ESBuild.
+        lastModified: timestamp,
+      });
+
+      const encoder = new TextEncoder();
+      const newCacheValueBuffer = encoder.encode(newCacheValue);
+
+      const keyURL = this.getCacheURL(key, cacheType, azionContext.AZION.BUCKET_PREFIX);
+      await azionContext.AZION.Storage.put(keyURL, newCacheValueBuffer, {
+        metadata: { id: `${timestamp}` },
+      });
     } catch (e) {
       throw new RecoverableError(`Failed to set cache [${key}]`);
     }
@@ -81,15 +91,15 @@ class StorageIncrementalCache implements IncrementalCache {
     }
   }
 
-  protected getAssetUrl(key: string, cacheType?: CacheEntryType): string {
+  protected getCacheURL(key: string, cacheType?: CacheEntryType, bucketPrefix?: string): string {
     if (cacheType === "composable") {
       throw new Error("Composable cache is not supported in static assets incremental cache");
     }
     const buildId = process.env.NEXT_BUILD_ID ?? FALLBACK_BUILD_ID;
     const name = (
       cacheType === "fetch"
-        ? `${CACHE_DIR}/__fetch/${buildId}/${key}`
-        : `${CACHE_DIR}/${buildId}/${key}.cache`
+        ? `${bucketPrefix}/${CACHE_DIR}/__fetch/${buildId}/${key}`
+        : `${bucketPrefix}/${CACHE_DIR}/${buildId}/${key}.cache`
     ).replace(/\/+/g, "/");
     return name;
   }

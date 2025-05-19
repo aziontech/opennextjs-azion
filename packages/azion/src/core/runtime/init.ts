@@ -41,16 +41,17 @@ let initialized = false;
  * Initializes the runtime on the first call,
  * no-op on subsequent invocations.
  */
-export function init(request: Request, env: AzionEnv) {
+export function init(_request: Request, _env: AzionEnv) {
   if (initialized) {
     return;
   }
   initialized = true;
 
-  const url = new URL(request.url);
+  // const url = new URL(request.url);
 
   initRuntime();
-  populateProcessEnv(url, env);
+  // TODO: CELLS not supported process set
+  // populateProcessEnv(url, env);
 }
 
 function initRuntime() {
