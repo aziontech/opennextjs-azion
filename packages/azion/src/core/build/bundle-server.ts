@@ -23,6 +23,7 @@ import { fixRequire } from "./patches/plugins/require.js";
 import { shimRequireHook } from "./patches/plugins/require-hook.js";
 import { needsExperimentalReact, normalizePath, patchCodeWithValidations } from "./utils/index.js";
 import { inlinePatchRenderUrl } from "./patches/plugins/patch-render-url.js";
+import { inlineDynamicRequireLoadComponents } from "./patches/plugins/dynamic-require-load-components.js";
 
 /** The dist directory of the Azion package */
 const packageDistDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../");
@@ -89,6 +90,7 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
     conditions: [],
     plugins: [
       shimRequireHook(buildOpts),
+      inlineDynamicRequireLoadComponents(updater, buildOpts),
       inlineDynamicRequires(updater, buildOpts),
       fixRequire(updater),
       handleOptionalDependencies(optionalDependencies),

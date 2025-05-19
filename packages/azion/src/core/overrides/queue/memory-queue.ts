@@ -3,6 +3,7 @@ import type { Queue, QueueMessage } from "@opennextjs/aws/types/overrides.js";
 import { IgnorableError } from "@opennextjs/aws/utils/error.js";
 
 import { debugCache } from "../internal";
+import { getAzionContext } from "../../../api";
 
 export const DEFAULT_REVALIDATION_TIMEOUT_MS = 10_000;
 
@@ -22,16 +23,17 @@ export class MemoryQueue implements Queue {
   async send({ MessageBody: { host, url }, MessageDeduplicationId }: QueueMessage): Promise<void> {
     debugCache("memory-queue", this.opts, host, url, MessageDeduplicationId);
 
-    const service = globalThis.internalFetch;
+    const service = getAzionContext().env.WORKER_SELF_REFERENCE;
     if (!service) throw new IgnorableError("No service binding for cache revalidation worker");
     if (this.revalidatedPaths.has(MessageDeduplicationId)) return;
     this.revalidatedPaths.add(MessageDeduplicationId);
+
     try {
       const protocol = host.includes("localhost") ? "http" : "https";
       // TODO: Drop the import - https://github.com/opennextjs/opennextjs-cloudflare/issues/361
       // @ts-ignore
       const manifest = await import("./.next/prerender-manifest.json");
-      const response = await service(`${protocol}://${host}${url}`, {
+      const response = await service.fetch(`${protocol}://${host}${url}`, {
         method: "HEAD",
         headers: {
           "x-prerender-revalidate": manifest.preview.previewModeId,

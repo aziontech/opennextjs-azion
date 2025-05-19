@@ -11,6 +11,7 @@ import stream from "node:stream";
 // @ts-expect-error: resolved by wrangler build
 import * as nextEnvVars from "./next-env.mjs";
 
+globalThis.AsyncLocalStorage = AsyncLocalStorage;
 const azionContextALS = new AsyncLocalStorage();
 
 // Note: this symbol needs to be kept in sync with `src/api/get-azion-context.ts`
@@ -40,16 +41,16 @@ let initialized = false;
  * Initializes the runtime on the first call,
  * no-op on subsequent invocations.
  */
-export function init(_request: Request, _env: AzionEnv) {
+export function init(request: Request, env: AzionEnv) {
   if (initialized) {
     return;
   }
   initialized = true;
 
-  // const url = new URL(request.url);
+  const url = new URL(request.url);
 
   initRuntime();
-  // populateProcessEnv(url, env);
+  populateProcessEnv(url, env);
 }
 
 function initRuntime() {

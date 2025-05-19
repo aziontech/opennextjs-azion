@@ -16,6 +16,8 @@ declare global {
     // Storage binding for the incremental cache
     AZION?: any;
 
+    WORKER_SELF_REFERENCE: any;
+
     // KV used for the incremental cache
     // NEXT_INC_CACHE_KV?: KVNamespace;
 

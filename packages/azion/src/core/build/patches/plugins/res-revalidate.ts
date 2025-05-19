@@ -60,14 +60,14 @@ rule:
                       has:
                         kind: identifier
 
-fix: await (await import("@opennextjs/azion")).getCloudflareContext().env.WORKER_SELF_REFERENCE.fetch(\`\${$REQ.headers.host.includes("localhost") ? "http":"https" }://\${$REQ.headers.host}$URL_PATH\`,{method:'HEAD', headers:$HEADERS})
+fix: await (await import("@opennextjs/azion")).getAzionContext().env.WORKER_SELF_REFERENCE.fetch(\`\${$REQ.headers.host.includes("localhost") ? "http":"https" }://\${$REQ.headers.host}$URL_PATH\`,{method:'HEAD', headers:$HEADERS})
 `;
-
+// TODO: FETCH revalidate
 export const patchResRevalidate: CodePatcher = {
   name: "patch-res-revalidate",
   patches: [
     {
-      versions: ">=14.2.0",
+      versions: ">=13.5.0",
       field: {
         pathFilter: getCrossPlatformPathRegex(
           String.raw`(pages-api\.runtime\.prod\.js|node/api-resolver\.js)$`,
