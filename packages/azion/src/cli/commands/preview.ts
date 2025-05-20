@@ -4,14 +4,12 @@ import { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 
 import { runBundler } from "../../core/utils/run-bundler.js";
 import path from "path";
-import { cpSync, existsSync, rmSync } from "fs";
 import { populateCache } from "./populate-cache.js";
 
 export async function preview(
   options: BuildOptions,
   config: OpenNextConfig,
-  previewOptions: { passthroughArgs: string[] },
-  previewConfig: { storageDir: string }
+  previewOptions: { passthroughArgs: string[]; destinationCacheDir?: string }
 ) {
   // check if file azion.config.js exists
   const configExtensions = [".cjs", ".js", ".mjs", ".ts"];
@@ -52,17 +50,8 @@ export async function preview(
   const portValue = port ? port.split("=")[1] : "3000";
 
   // Populate the cache
-  await populateCache(options, config, {});
-
-  // remover folder storageDir
-  const storageDir = path.join(options.appPath, previewConfig.storageDir);
-  if (existsSync(storageDir)) {
-    rmSync(storageDir, { recursive: true, force: true });
-  }
-
-  // Copy assets to the .edge directory
-  cpSync(`${options.outputDir}/assets`, path.join(options.appPath, previewConfig.storageDir), {
-    recursive: true,
+  await populateCache(options, config, {
+    destinationCacheDir: previewOptions.destinationCacheDir || ".edge/storage",
   });
 
   runBundler(options, ["dev", "--port", portValue!, ...previewOptions.passthroughArgs], {

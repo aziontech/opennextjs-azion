@@ -18,6 +18,7 @@ export type Arguments = (
   | {
       command: "populateCache";
       environment?: string;
+      destinationCacheDir?: string;
     }
 ) & { outputDir?: string };
 

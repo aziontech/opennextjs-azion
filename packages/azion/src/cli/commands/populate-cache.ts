@@ -1,4 +1,4 @@
-import { cpSync, existsSync } from "node:fs";
+import { cpSync, existsSync, rmSync } from "node:fs";
 import path from "node:path";
 
 import type { BuildOptions } from "@opennextjs/aws/build/helper.js";
@@ -205,10 +205,9 @@ function populateStaticAssetsIncrementalCache(options: BuildOptions) {
 export async function populateCache(
   options: BuildOptions,
   config: OpenNextConfig,
-  populateCacheOptions: { environment?: string }
+  populateCacheOptions: { environment?: string; destinationCacheDir?: string } = {}
 ) {
-  const { incrementalCache, tagCache } = config.default.override ?? {};
-  console.log("populateCacheOptions", populateCacheOptions, tagCache);
+  const { incrementalCache } = config.default.override ?? {};
 
   if (!existsSync(options.outputDir)) {
     logger.error("Unable to populate cache: Open Next build not found");
@@ -230,6 +229,23 @@ export async function populateCache(
       default:
         logger.info("Incremental cache does not need populating");
     }
+  }
+
+  if (populateCacheOptions.destinationCacheDir) {
+    // remover folder storageDir
+    const storageDir = path.join(options.appPath, populateCacheOptions.destinationCacheDir);
+    if (existsSync(storageDir)) {
+      rmSync(storageDir, { recursive: true, force: true });
+    }
+
+    // Copy assets to the .edge directory
+    cpSync(
+      `${options.outputDir}/assets`,
+      path.join(options.appPath, populateCacheOptions.destinationCacheDir),
+      {
+        recursive: true,
+      }
+    );
   }
 
   // if (!config.dangerous?.disableTagCache && !config.dangerous?.disableIncrementalCache && tagCache) {

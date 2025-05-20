@@ -44,13 +44,16 @@ async function runCommand(args: Arguments) {
         sourceDir: baseDir,
       });
     case "preview":
-      return preview(options, config, args, { storageDir: ".edge/storage" });
+      return preview(options, config, args);
     case "deploy":
       return deploy(options, config, args);
     case "upload":
       return upload(options, config, args);
     case "populateCache":
-      return populateCache(options, config, args);
+      return populateCache(options, config, {
+        ...args,
+        destinationCacheDir: args.destinationCacheDir || ".edge/storage",
+      });
   }
 }
 
