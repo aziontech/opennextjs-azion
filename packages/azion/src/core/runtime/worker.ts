@@ -11,6 +11,7 @@ export default {
   async fetch(event: any, env: any, ctx: any) {
     ctx = {
       waitUntil: event.waitUntil.bind(event),
+      request: event.request,
     };
     env = {
       ...env,
@@ -18,6 +19,7 @@ export default {
       AZION: {
         BUCKET_NAME: (globalThis as any).AZION_BUCKET_NAME ?? "",
         BUCKET_PREFIX: (globalThis as any).AZION_BUCKET_PREFIX ?? "",
+        CACHE_API_STORAGE_NAME: (globalThis as any).AZION_CACHE_API_STORAGE_NAME ?? "nextjs_cache",
         Storage: InstanceStorage,
       },
       ASSETS: {
@@ -26,6 +28,10 @@ export default {
       WORKER_SELF_REFERENCE: {
         fetch: async (url: string, options: RequestInit) => {
           const request = new Request(url, options);
+          ctx = {
+            ...ctx,
+            request,
+          };
           return requestHandler(request, env, ctx);
         },
       },

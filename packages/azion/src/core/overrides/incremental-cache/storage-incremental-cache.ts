@@ -9,11 +9,14 @@ import { IgnorableError, RecoverableError } from "@opennextjs/aws/utils/error.js
 
 import { debugCache, FALLBACK_BUILD_ID } from "../internal.js";
 import { getAzionContext } from "../../../api/azion-context.js";
+import CacheApi from "../../../api/cache-api/index.js";
 
 //  Assets inside `data-cache/...` are only accessible by the worker.
 export const CACHE_DIR = "data-cache/_next_cache";
 
 export const NAME = "azion-storage-incremental-cache";
+
+const BUILD_ID = process.env.NEXT_BUILD_ID ?? FALLBACK_BUILD_ID;
 
 /**
  * This cache uses Workers storage.
@@ -21,6 +24,7 @@ export const NAME = "azion-storage-incremental-cache";
  */
 class StorageIncrementalCache implements IncrementalCache {
   readonly name = NAME;
+  private readonly storageCachePrefix = `${BUILD_ID}`;
 
   async get<CacheType extends CacheEntryType = "cache">(
     key: string,
@@ -29,16 +33,37 @@ class StorageIncrementalCache implements IncrementalCache {
     debugCache(`Get ${key}`, cacheType);
 
     try {
-      const azionContext = getAzionContext().env;
-      const keyURL = this.getCacheURL(key, cacheType, azionContext.AZION.BUCKET_PREFIX);
-      const cacheValue = await azionContext.AZION.Storage.get(keyURL);
+      const azionContext = getAzionContext();
+      const responseCacheAPI = await CacheApi.getCacheAPI(
+        `${this.storageCachePrefix}_${azionContext.env.AZION.CACHE_API_STORAGE_NAME}`,
+        key
+      ).catch((e) => {
+        debugCache("Error CacheApi", e.message);
+        return null;
+      });
+
+      if (responseCacheAPI) {
+        debugCache("Response by Cache API by key:", key);
+        const cacheApiContent = await responseCacheAPI.json();
+        return {
+          value: cacheApiContent,
+          lastModified: cacheApiContent.lastModified
+            ? Number(cacheApiContent.lastModified)
+            : (globalThis as { __BUILD_TIMESTAMP_MS__?: number }).__BUILD_TIMESTAMP_MS__,
+        };
+      }
+
+      // Storage API
+      const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION.BUCKET_PREFIX);
+      // bind the env to the worker
+      const cacheValue = await azionContext.env.AZION.Storage.get(keyURL);
       if (!cacheValue) throw new IgnorableError(`Cache miss for ${key}`);
 
       const cacheContentArray = await cacheValue.arrayBuffer();
-
       const decoder = new TextDecoder();
       const cacheContent = JSON.parse(decoder.decode(cacheContentArray));
 
+      debugCache("Cache by Storage API:", key);
       return {
         value: cacheContent,
         // __BUILD_TIMESTAMP_MS__ is injected by ESBuild.
@@ -59,22 +84,33 @@ class StorageIncrementalCache implements IncrementalCache {
   ): Promise<void> {
     try {
       debugCache(`Set ${key}`, cacheType);
-      const azionContext = getAzionContext().env;
-
-      const timestamp = Date.now();
+      const azionContext = getAzionContext();
 
       const newCacheValue = JSON.stringify({
         ...value,
         // __BUILD_TIMESTAMP_MS__ is injected by ESBuild.
-        lastModified: timestamp,
+        lastModified: Date.now(),
       });
 
+      // Cache API
+      const cacheAPI = await CacheApi.putCacheAPIkey(
+        `${this.storageCachePrefix}_${azionContext.env.AZION.CACHE_API_STORAGE_NAME}`,
+        key,
+        newCacheValue
+      ).catch((e) => {
+        debugCache("Error CacheApi", e.message);
+        return null;
+      });
+      if (cacheAPI) {
+        debugCache("Put Cache API by key:", key);
+      }
+
+      // Storage API
       const encoder = new TextEncoder();
       const newCacheValueBuffer = encoder.encode(newCacheValue);
-
-      const keyURL = this.getCacheURL(key, cacheType, azionContext.AZION.BUCKET_PREFIX);
-      await azionContext.AZION.Storage.put(keyURL, newCacheValueBuffer, {
-        metadata: { id: `${timestamp}` },
+      const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION.BUCKET_PREFIX);
+      await azionContext.env.AZION.Storage.put(keyURL, newCacheValueBuffer, {
+        metadata: { id: `${BUILD_ID}` },
       });
     } catch (e) {
       throw new RecoverableError(`Failed to set cache [${key}]`);
@@ -92,9 +128,6 @@ class StorageIncrementalCache implements IncrementalCache {
   }
 
   protected getCacheURL(key: string, cacheType?: CacheEntryType, bucketPrefix?: string): string {
-    if (cacheType === "composable") {
-      throw new Error("Composable cache is not supported in static assets incremental cache");
-    }
     const buildId = process.env.NEXT_BUILD_ID ?? FALLBACK_BUILD_ID;
     const name = (
       cacheType === "fetch"

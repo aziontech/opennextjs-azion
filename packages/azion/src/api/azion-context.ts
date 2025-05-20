@@ -3,6 +3,7 @@ declare global {
     waitUntil(promise: Promise<any>): void;
     passThroughOnException(): void;
     props: any;
+    request: Request;
   }
 
   interface AzionEnv {
