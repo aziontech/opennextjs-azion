@@ -44,11 +44,12 @@ class StorageIncrementalCache implements IncrementalCache {
 
       if (responseCacheAPI) {
         debugCache("Response by Cache API by key:", key);
-        const cacheApiContent = await responseCacheAPI.json();
+        const cacheApiContent = await responseCacheAPI.text();
+        const cacheApiContentParsed = JSON.parse(cacheApiContent);
         return {
-          value: cacheApiContent,
-          lastModified: cacheApiContent.lastModified
-            ? Number(cacheApiContent.lastModified)
+          value: cacheApiContentParsed,
+          lastModified: cacheApiContentParsed.lastModified
+            ? Number(cacheApiContentParsed.lastModified)
             : (globalThis as { __BUILD_TIMESTAMP_MS__?: number }).__BUILD_TIMESTAMP_MS__,
         };
       }
@@ -88,7 +89,6 @@ class StorageIncrementalCache implements IncrementalCache {
 
       const newCacheValue = JSON.stringify({
         ...value,
-        // __BUILD_TIMESTAMP_MS__ is injected by ESBuild.
         lastModified: Date.now(),
       });
 
@@ -112,6 +112,8 @@ class StorageIncrementalCache implements IncrementalCache {
       await azionContext.env.AZION.Storage.put(keyURL, newCacheValueBuffer, {
         metadata: { id: `${BUILD_ID}` },
       });
+
+      debugCache("Put Storage API:", key);
     } catch (e) {
       throw new RecoverableError(`Failed to set cache [${key}]`);
     }
