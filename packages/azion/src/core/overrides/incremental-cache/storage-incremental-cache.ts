@@ -31,7 +31,6 @@ class StorageIncrementalCache implements IncrementalCache {
     cacheType?: CacheType
   ): Promise<WithLastModified<CacheValue<CacheType>> | null> {
     debugCache(`Get ${key}`, cacheType);
-
     try {
       const azionContext = getAzionContext();
       const responseCacheAPI = await CacheApi.getCacheAPI(
@@ -43,9 +42,8 @@ class StorageIncrementalCache implements IncrementalCache {
       });
 
       if (responseCacheAPI) {
-        debugCache("Response by Cache API by key:", key);
-        const cacheApiContent = await responseCacheAPI.text();
-        const cacheApiContentParsed = JSON.parse(cacheApiContent);
+        debugCache("Response Cache API by key:", key);
+        const cacheApiContentParsed = JSON.parse(responseCacheAPI);
         return {
           value: cacheApiContentParsed,
           lastModified: cacheApiContentParsed.lastModified
@@ -93,17 +91,14 @@ class StorageIncrementalCache implements IncrementalCache {
       });
 
       // Cache API
-      const cacheAPI = await CacheApi.putCacheAPIkey(
+      await CacheApi.putCacheAPIkey(
         `${this.storageCachePrefix}_${azionContext.env.AZION.CACHE_API_STORAGE_NAME}`,
         key,
         newCacheValue
       ).catch((e) => {
-        debugCache("Error CacheApi", e.message);
+        debugCache("Error CacheApi on PUT", e.message);
         return null;
       });
-      if (cacheAPI) {
-        debugCache("Put Cache API by key:", key);
-      }
 
       // Storage API
       const encoder = new TextEncoder();
