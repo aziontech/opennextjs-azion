@@ -24,6 +24,7 @@ import { shimRequireHook } from "./patches/plugins/require-hook.js";
 import { needsExperimentalReact, normalizePath, patchCodeWithValidations } from "./utils/index.js";
 import { inlinePatchRenderUrl } from "./patches/plugins/patch-render-url.js";
 import { inlineDynamicRequireLoadComponents } from "./patches/plugins/dynamic-require-load-components.js";
+import { inlinePatchRewriteRouter } from "./patches/plugins/patch-rewrite-router.js";
 
 /** The dist directory of the Azion package */
 const packageDistDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../");
@@ -102,10 +103,11 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       inlinePatchRenderUrl(updater),
       patchDepdDeprecations(updater),
       patchNextMinimal(updater),
+      inlinePatchRewriteRouter(updater),
       // Apply updater updates, must be the last plugin
       updater.plugin,
     ] as Plugin[],
-    external: ["./middleware/handler.mjs", "*.wasm", "azion:storage"],
+    external: ["./middleware/handler.mjs", "*.wasm"],
     alias: {
       // Note: it looks like node-fetch is actually not necessary for us, so we could replace it with an empty shim
       //       but just to be safe we replace it with a module that re-exports the native fetch
