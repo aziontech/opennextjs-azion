@@ -1,5 +1,3 @@
-import type { WranglerTarget } from "./utils/run-bundler.js";
-
 export type ProjectOptions = {
   // Next app root folder
   sourceDir: string;
@@ -10,5 +8,5 @@ export type ProjectOptions = {
   // Whether minification of the worker should be enabled
   minify: boolean;
   // Whether the Next.js build should be done in standalone mode
-  populateCache?: { mode: WranglerTarget; onlyPopulateWithoutBuilding: boolean }; // TODO: remove this
+  populateCache?: { onlyPopulateWithoutBuilding: boolean }; // TODO: remove this
 };
