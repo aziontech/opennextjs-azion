@@ -8,9 +8,10 @@ class CacheApi {
       const cache = await caches.open(cacheStorageName);
       const url = new URL(key, `http://${this.hostname}`);
       const request = new Request(url);
-      const result = cache.match(request);
+      const result = await cache.match(request);
       if (result.text) {
-        return result.text();
+        const res = await result.text();
+        return res;
       }
       debugCache("Cache API MISS for key:", key);
       return null;
