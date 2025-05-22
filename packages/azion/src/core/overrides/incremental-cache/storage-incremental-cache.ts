@@ -34,7 +34,7 @@ class StorageIncrementalCache implements IncrementalCache {
     try {
       const azionContext = getAzionContext();
       const responseCacheAPI = await CacheApi.getCacheAPI(
-        `${this.storageCachePrefix}_${azionContext.env.AZION.CACHE_API_STORAGE_NAME}`,
+        `${this.storageCachePrefix}_${azionContext.env.AZION?.CACHE_API_STORAGE_NAME}`,
         key
       ).catch((e) => {
         debugCache("Error CacheApi", e.message);
@@ -53,9 +53,9 @@ class StorageIncrementalCache implements IncrementalCache {
       }
 
       // Storage API
-      const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION.BUCKET_PREFIX);
+      const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION?.BUCKET_PREFIX);
       // bind the env to the worker
-      const cacheValue = await azionContext.env.AZION.Storage.get(keyURL);
+      const cacheValue = await azionContext.env.AZION?.Storage.get(keyURL);
       if (!cacheValue) throw new IgnorableError(`Cache miss for ${key}`);
 
       const cacheContentArray = await cacheValue.arrayBuffer();
@@ -92,7 +92,7 @@ class StorageIncrementalCache implements IncrementalCache {
 
       // Cache API
       await CacheApi.putCacheAPIkey(
-        `${this.storageCachePrefix}_${azionContext.env.AZION.CACHE_API_STORAGE_NAME}`,
+        `${this.storageCachePrefix}_${azionContext.env.AZION?.CACHE_API_STORAGE_NAME}`,
         key,
         newCacheValue
       ).catch((e) => {
@@ -103,8 +103,8 @@ class StorageIncrementalCache implements IncrementalCache {
       // Storage API
       const encoder = new TextEncoder();
       const newCacheValueBuffer = encoder.encode(newCacheValue);
-      const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION.BUCKET_PREFIX);
-      await azionContext.env.AZION.Storage.put(keyURL, newCacheValueBuffer, {
+      const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION?.BUCKET_PREFIX);
+      await azionContext.env.AZION?.Storage.put(keyURL, newCacheValueBuffer, {
         metadata: { id: `${BUILD_ID}` },
       });
 

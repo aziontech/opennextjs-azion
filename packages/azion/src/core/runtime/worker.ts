@@ -6,12 +6,15 @@ const bucketName = (globalThis as any).AZION_BUCKET_NAME ?? "";
 const InstanceStorage = new (globalThis as any).Azion.Storage(bucketName);
 
 export default {
-  // TODO: create types for this
-  // the bundler does not pass env and ctx to the worker
-  async fetch(event: any, env: any, ctx: any) {
+  // TODO: change to event to request when available on Azion Bundler
+  async fetch(event: any, env: AzionEnv, ctx: ExecutionContext) {
+    // TODO: load the env and ctx from the global scope
+    // remove this when bindings are available
     ctx = {
       waitUntil: event.waitUntil.bind(event),
+      passThroughOnException: event.passThroughOnException,
       request: event.request,
+      props: {},
     };
     env = {
       ...env,
@@ -44,12 +47,12 @@ export default {
 
 const requestHandler = async (request: Request, env: any, ctx: any) => {
   const url = new URL(request.url);
-  // TODO: This is a workaround for rewrite next.config
+  // This is a workaround for rewrite next.config
   // Issue: https://github.com/opennextjs/opennextjs-aws/issues/848
   request.headers.set("x-original-url", url.pathname);
   // Serve images in development.
   // Note: "/data-cache/image/..." requests do not reach production workers.
-  // TODO: check this
+  // TODO: make support for this
   if (url.pathname.startsWith("/data-cache/image/")) {
     const m = url.pathname.match(/\/data-cache\/image\/.+?\/(?<url>.+)$/);
     if (m === null) {
@@ -65,7 +68,7 @@ const requestHandler = async (request: Request, env: any, ctx: any) => {
     return imageUrl.startsWith("/") ? env.ASSETS?.fetch(new URL(imageUrl, request.url)) : fetch(imageUrl);
   }
 
-  // TODO: check this
+  // static assets
   if (url.pathname.startsWith("/_next/")) {
     return env.ASSETS?.fetch(request);
   }
@@ -90,6 +93,6 @@ const getStorageAsset = async (request: Request) => {
     const assetUrl = new URL(requestPath === "/" ? "index.html" : requestPath, "file://");
     return fetch(assetUrl);
   } catch (e) {
-    return new Response((e as Error).message || (e as Error).toString(), { status: 500 });
+    return new Response((e as Error).message || (e as Error).toString(), { status: 404 });
   }
 };
