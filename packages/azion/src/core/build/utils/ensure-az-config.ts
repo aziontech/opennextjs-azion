@@ -8,7 +8,8 @@ import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
  */
 export function ensureAzionConfig(config: OpenNextConfig) {
   const requirements = {
-    dftUseAzionWrapper: config.default?.override?.wrapper === "cloudflare-node", // TODO: submit a PR to open-next aws
+    // TODO: in the future move to the open-next aws package
+    dftUseAzionWrapper: typeof config.default?.override?.wrapper === "function",
     dftUseEdgeConverter: config.default?.override?.converter === "edge",
     dftUseFetchProxy: config.default?.override?.proxyExternalRequest === "fetch",
     dftMaybeUseCache:
@@ -35,7 +36,7 @@ export function ensureAzionConfig(config: OpenNextConfig) {
         `{
           default: {
             override: {
-              wrapper: "cloudflare-node",
+              wrapper: "function",
               converter: "edge",
               proxyExternalRequest: "fetch",
               incrementalCache: "dummy" | function,
