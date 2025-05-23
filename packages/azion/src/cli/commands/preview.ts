@@ -5,11 +5,12 @@ import { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 import { runBundler } from "../../core/utils/run-bundler.js";
 import path from "path";
 import { populateCache } from "./populate-cache.js";
+import { copyAssets } from "../../core/utils/copy-assets.js";
 
 export async function preview(
   options: BuildOptions,
   config: OpenNextConfig,
-  previewOptions: { passthroughArgs: string[]; destinationCacheDir?: string }
+  previewOptions: { assetsDir: string; cacheDir: string; bundlerVersion: string; passthroughArgs: string[] }
 ) {
   // check if file azion.config.js exists
   const configExtensions = [".cjs", ".js", ".mjs", ".ts"];
@@ -25,6 +26,7 @@ export async function preview(
       // File does not exist, continue to the next extension
     }
   }
+  // TODO: remove this, when enable bundler command dev to receive --entry argument
   if (!configFile) {
     await new Promise((resolve) => {
       resolve(
@@ -40,7 +42,7 @@ export async function preview(
           ],
           {
             logging: "all",
-            version: "5.2.0-stage.2",
+            version: previewOptions.bundlerVersion,
           }
         )
       );
@@ -49,13 +51,16 @@ export async function preview(
   const port = previewOptions.passthroughArgs.find((arg) => arg.startsWith("--port="));
   const portValue = port ? port.split("=")[1] : "3000";
 
+  // Copy static assets to the cache directory
+  copyAssets(path.join(options.outputDir, "assets"), path.join(previewOptions.assetsDir));
+
   // Populate the cache
   await populateCache(options, config, {
-    destinationCacheDir: previewOptions.destinationCacheDir || ".edge/storage",
+    cacheDir: previewOptions.cacheDir,
   });
 
   runBundler(options, ["dev", "--port", portValue!, ...previewOptions.passthroughArgs], {
     logging: "all",
-    version: "5.2.0-stage.2",
+    version: previewOptions.bundlerVersion,
   });
 }

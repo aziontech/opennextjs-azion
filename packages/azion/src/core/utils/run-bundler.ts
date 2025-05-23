@@ -84,24 +84,3 @@ export function runBundler(options: BuildOptions, args: string[], bundlerOpts: B
     process.exit(1);
   }
 }
-
-/**
- * Find the value of the environment flag (`--env` / `-e`) used by Wrangler.
- *
- * @param args - CLI arguments.
- * @returns Value of the environment flag.
- */
-export function getWranglerEnvironmentFlag(args: string[]) {
-  for (let i = 0; i <= args.length; i++) {
-    const arg = args[i];
-    if (!arg) continue;
-
-    if (arg === "--env" || arg === "-e") {
-      return args[i + 1];
-    }
-
-    if (arg.startsWith("--env=") || arg.startsWith("-e=")) {
-      return arg.split("=")[1];
-    }
-  }
-}

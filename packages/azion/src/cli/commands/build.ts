@@ -9,14 +9,11 @@ import logger from "@opennextjs/aws/logger.js";
 import { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 
 import type { ProjectOptions } from "../../core/project-options.js";
-import { bundleServer } from "./bundle-server.js";
-// import { compileCacheAssetsManifestSqlFile } from "./open-next/compile-cache-assets-manifest.js";
-import { compileEnvFiles } from "./open-next/compile-env-files.js";
-import { compileInit } from "./open-next/compile-init.js";
-// import { compileDurableObjects } from "./open-next/compileDurableObjects.js";
-import { createServerBundle } from "./open-next/createServerBundle.js";
-import { createWranglerConfigIfNotExistent } from "./utils/index.js";
-import { getVersion } from "./utils/version.js";
+import { bundleServer } from "../../core/build/bundle-server.js";
+import { compileEnvFiles } from "../../core/build/open-next/compile-env-files.js";
+import { compileInit } from "../../core/build/open-next/compile-init.js";
+import { createServerBundle } from "../../core/build/open-next/createServerBundle.js";
+import { getVersion } from "../../core/build/utils/version.js";
 
 /**
  * Builds the application in a format that can be passed to workerd
@@ -73,24 +70,12 @@ export async function build(
   createStaticAssets(options);
 
   if (config.dangerous?.disableIncrementalCache !== true) {
-    // const { useTagCache, metaFiles } = createCacheAssets(options);
     createCacheAssets(options);
-    // TODO: check this in v2
-    // if (useTagCache) {
-    //   compileCacheAssetsManifestSqlFile(options, metaFiles);
-    // }
   }
 
   await createServerBundle(options);
 
-  // TODO: check this in v2
-  // await compileDurableObjects(options);
-
   await bundleServer(options);
-
-  if (!projectOpts.skipWranglerConfigCheck) {
-    await createWranglerConfigIfNotExistent(projectOpts);
-  }
 
   logger.info("OpenNext build complete.");
 }

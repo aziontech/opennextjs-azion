@@ -11,29 +11,10 @@ import type {
 } from "@opennextjs/aws/types/open-next.js";
 import type { IncrementalCache, TagCache } from "@opennextjs/aws/types/overrides.js";
 import { globSync } from "glob";
-// import { tqdm } from "ts-tqdm";
-// import { unstable_readConfig } from "wrangler";
-
-// import {
-//   BINDING_NAME as KV_CACHE_BINDING_NAME,
-//   computeCacheKey as computeKVCacheKey,
-//   NAME as KV_CACHE_NAME,
-// } from "../../api/overrides/incremental-cache/kv-incremental-cache.js";
-// import {
-//   BINDING_NAME as R2_CACHE_BINDING_NAME,
-//   computeCacheKey as computeR2CacheKey,
-//   NAME as R2_CACHE_NAME,
-//   PREFIX_ENV_NAME as R2_CACHE_PREFIX_ENV_NAME,
-// } from "../../api/overrides/incremental-cache/r2-incremental-cache.js";
 import {
   CACHE_DIR as STATIC_ASSETS_CACHE_DIR,
   NAME as STATIC_ASSETS_CACHE_NAME,
 } from "../../core/overrides/incremental-cache/storage-incremental-cache.js";
-// import {
-//   BINDING_NAME as D1_TAG_BINDING_NAME,
-//   NAME as D1_TAG_NAME,
-// } from "../../api/overrides/tag-cache/d1-next-tag-cache.js";
-// import { runWrangler } from "../utils/run-wrangler.js";
 
 async function resolveCacheName(
   value:
@@ -91,121 +72,22 @@ export function getCacheAssets(opts: BuildOptions): CacheAsset[] {
   return assets;
 }
 
-// function populateR2IncrementalCache(
-//   options: BuildOptions,
-//   populateCacheOptions: { target: WranglerTarget; environment?: string }
-// ) {
-//   logger.info("\nPopulating R2 incremental cache...");
-
-//   const config = unstable_readConfig({ env: populateCacheOptions.environment });
-
-//   const binding = config.r2_buckets.find(({ binding }) => binding === R2_CACHE_BINDING_NAME);
-//   if (!binding) {
-//     throw new Error(`No R2 binding ${JSON.stringify(R2_CACHE_BINDING_NAME)} found!`);
-//   }
-
-//   const bucket = binding.bucket_name;
-//   if (!bucket) {
-//     throw new Error(`R2 binding ${JSON.stringify(R2_CACHE_BINDING_NAME)} should have a 'bucket_name'`);
-//   }
-
-//   const assets = getCacheAssets(options);
-
-//   for (const { fullPath, key, buildId, isFetch } of tqdm(assets)) {
-//     const cacheKey = computeR2CacheKey(key, {
-//       directory: process.env[R2_CACHE_PREFIX_ENV_NAME],
-//       buildId,
-//       isFetch,
-//     });
-
-//     runWrangler(
-//       options,
-//       ["r2 object put", JSON.stringify(path.join(bucket, cacheKey)), `--file ${JSON.stringify(fullPath)}`],
-//       // NOTE: R2 does not support the environment flag and results in the following error:
-//       // Incorrect type for the 'cacheExpiry' field on 'HttpMetadata': the provided value is not of type 'date'.
-//       { target: populateCacheOptions.target, excludeRemoteFlag: true, logging: "error" }
-//     );
-//   }
-//   logger.info(`Successfully populated cache with ${assets.length} assets`);
-// }
-
-// function populateKVIncrementalCache(
-//   options: BuildOptions,
-//   populateCacheOptions: { target: WranglerTarget; environment?: string }
-// ) {
-//   logger.info("\nPopulating KV incremental cache...");
-
-//   const config = unstable_readConfig({ env: populateCacheOptions.environment });
-
-//   const binding = config.kv_namespaces.find(({ binding }) => binding === KV_CACHE_BINDING_NAME);
-//   if (!binding) {
-//     throw new Error(`No KV binding ${JSON.stringify(KV_CACHE_BINDING_NAME)} found!`);
-//   }
-
-//   const assets = getCacheAssets(options);
-
-//   for (const { fullPath, key, buildId, isFetch } of tqdm(assets)) {
-//     const cacheKey = computeKVCacheKey(key, {
-//       buildId,
-//       isFetch,
-//     });
-
-//     runWrangler(
-//       options,
-//       [
-//         "kv key put",
-//         JSON.stringify(cacheKey),
-//         `--binding ${JSON.stringify(KV_CACHE_BINDING_NAME)}`,
-//         `--path ${JSON.stringify(fullPath)}`,
-//       ],
-//       { ...populateCacheOptions, logging: "error" }
-//     );
-//   }
-//   logger.info(`Successfully populated cache with ${assets.length} assets`);
-// }
-
-// function populateD1TagCache(
-//   options: BuildOptions,
-//   populateCacheOptions: { target: WranglerTarget; environment?: string }
-// ) {
-//   logger.info("\nCreating D1 table if necessary...");
-
-//   const config = unstable_readConfig({ env: populateCacheOptions.environment });
-
-//   const binding = config.d1_databases.find(({ binding }) => binding === D1_TAG_BINDING_NAME);
-//   if (!binding) {
-//     throw new Error(`No D1 binding ${JSON.stringify(D1_TAG_BINDING_NAME)} found!`);
-//   }
-
-//   runWrangler(
-//     options,
-//     [
-//       "d1 execute",
-//       JSON.stringify(D1_TAG_BINDING_NAME),
-//       `--command "CREATE TABLE IF NOT EXISTS revalidations (tag TEXT NOT NULL, revalidatedAt INTEGER NOT NULL, UNIQUE(tag) ON CONFLICT REPLACE);"`,
-//     ],
-//     { ...populateCacheOptions, logging: "error" }
-//   );
-
-//   logger.info("\nSuccessfully created D1 table");
-// }
-
-function populateStaticAssetsIncrementalCache(options: BuildOptions) {
-  logger.info("\nPopulating Workers static assets...");
-
-  cpSync(
-    path.join(options.outputDir, "cache"),
-    path.join(options.outputDir, "assets", STATIC_ASSETS_CACHE_DIR),
-    { recursive: true }
-  );
-
-  logger.info(`Successfully populated static assets cache`);
+function populateStaticAssetsIncrementalCache(options: BuildOptions, cacheDir: string) {
+  logger.info("\nPopulating cache...");
+  const storageCacheDir = path.join(cacheDir, STATIC_ASSETS_CACHE_DIR);
+  if (existsSync(storageCacheDir)) {
+    rmSync(storageCacheDir, { recursive: true, force: true });
+  }
+  cpSync(path.join(options.outputDir, "cache"), path.join(cacheDir, STATIC_ASSETS_CACHE_DIR), {
+    recursive: true,
+  });
+  logger.info(`Successfully populated cache`);
 }
 
 export async function populateCache(
   options: BuildOptions,
   config: OpenNextConfig,
-  populateCacheOptions: { environment?: string; destinationCacheDir?: string } = {}
+  populateCacheOptions: { cacheDir: string }
 ) {
   const { incrementalCache } = config.default.override ?? {};
 
@@ -217,45 +99,11 @@ export async function populateCache(
   if (!config.dangerous?.disableIncrementalCache && incrementalCache) {
     const name = await resolveCacheName(incrementalCache);
     switch (name) {
-      // case R2_CACHE_NAME:
-      //   populateR2IncrementalCache(options, populateCacheOptions);
-      //   break;
-      // case KV_CACHE_NAME:
-      //   populateKVIncrementalCache(options, populateCacheOptions);
-      //   break;
       case STATIC_ASSETS_CACHE_NAME:
-        populateStaticAssetsIncrementalCache(options);
+        populateStaticAssetsIncrementalCache(options, populateCacheOptions.cacheDir);
         break;
       default:
         logger.info("Incremental cache does not need populating");
     }
   }
-
-  if (populateCacheOptions.destinationCacheDir) {
-    // remover folder storageDir
-    const storageDir = path.join(options.appPath, populateCacheOptions.destinationCacheDir);
-    if (existsSync(storageDir)) {
-      rmSync(storageDir, { recursive: true, force: true });
-    }
-
-    // Copy assets to the .edge directory
-    cpSync(
-      `${options.outputDir}/assets`,
-      path.join(options.appPath, populateCacheOptions.destinationCacheDir),
-      {
-        recursive: true,
-      }
-    );
-  }
-
-  // if (!config.dangerous?.disableTagCache && !config.dangerous?.disableIncrementalCache && tagCache) {
-  //   const name = await resolveCacheName(tagCache);
-  //   switch (name) {
-  //     case D1_TAG_NAME:
-  //       populateD1TagCache(options, populateCacheOptions);
-  //       break;
-  //     default:
-  //       logger.info("Tag cache does not need populating");
-  //   }
-  // }
 }

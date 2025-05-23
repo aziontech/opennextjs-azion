@@ -2,25 +2,29 @@ import { mkdirSync, type Stats, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
-import { getWranglerEnvironmentFlag } from "../core/utils/run-bundler.js";
-
 export type Arguments = (
   | {
       command: "build";
       skipNextBuild: boolean;
-      skipWranglerConfigCheck: boolean;
       minify: boolean;
     }
   | {
-      command: "preview" | "deploy" | "upload";
+      command: "preview" | "deploy";
       passthroughArgs: string[];
+      assetsDir: string;
+      cacheDir: string;
+      bundlerVersion: string;
     }
   | {
       command: "populateCache";
-      environment?: string;
-      destinationCacheDir?: string;
+      assetsDir: string;
+      cacheDir: string;
     }
 ) & { outputDir?: string };
+
+// TODO: review this when azion.config.js contains this information
+const ASSETS_DIR = ".edge/storage";
+const CACHE_DIR = ".edge/storage";
 
 export function getArgs(): Arguments {
   const { positionals, values } = parseArgs({
@@ -28,15 +32,13 @@ export function getArgs(): Arguments {
       skipBuild: { type: "boolean", short: "s", default: false },
       output: { type: "string", short: "o" },
       noMinify: { type: "boolean", default: false },
-      skipWranglerConfigCheck: { type: "boolean", default: false },
+      bundlerVersion: { type: "string", default: "5.2.0-stage.2" },
     },
     allowPositionals: true,
   });
 
   const outputDir = values.output ? resolve(values.output) : undefined;
   if (outputDir) assertDirArg(outputDir, "output", true);
-
-  const passthroughArgs = getPassthroughArgs();
 
   switch (positionals[0]) {
     case "build":
@@ -45,33 +47,41 @@ export function getArgs(): Arguments {
         outputDir,
         skipNextBuild:
           values.skipBuild || ["1", "true", "yes"].includes(String(process.env.SKIP_NEXT_APP_BUILD)),
-        skipWranglerConfigCheck:
-          values.skipWranglerConfigCheck ||
-          ["1", "true", "yes"].includes(String(process.env.SKIP_WRANGLER_CONFIG_CHECK)),
         minify: !values.noMinify,
       };
     case "preview":
-    case "deploy":
-    case "upload":
       return {
-        command: positionals[0],
+        command: "preview",
+        passthroughArgs: getPassthroughArgs(),
         outputDir,
-        passthroughArgs,
+        assetsDir: ASSETS_DIR,
+        cacheDir: CACHE_DIR,
+        bundlerVersion: values.bundlerVersion!,
       };
+    case "deploy":
+      return {
+        command: "deploy",
+        passthroughArgs: getPassthroughArgs(),
+        outputDir,
+        assetsDir: ASSETS_DIR,
+        cacheDir: CACHE_DIR,
+        bundlerVersion: values.bundlerVersion!,
+      };
+
     case "populateCache":
       return {
         command: "populateCache",
         outputDir,
-        environment: getWranglerEnvironmentFlag(passthroughArgs),
+        assetsDir: ASSETS_DIR,
+        cacheDir: CACHE_DIR,
       };
+
     default:
-      throw new Error(
-        "Error: invalid command, expected 'build' | 'preview' | 'deploy' | 'upload' | 'populateCache'"
-      );
+      throw new Error("Error: invalid command, expected 'build' | 'preview' | 'deploy' | 'populateCache'");
   }
 }
 
-function getPassthroughArgs() {
+export function getPassthroughArgs() {
   const passthroughPos = process.argv.indexOf("--");
   return passthroughPos === -1 ? [] : process.argv.slice(passthroughPos + 1);
 }

@@ -1,17 +1,27 @@
 import { BuildOptions } from "@opennextjs/aws/build/helper.js";
 import { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 
-import { getWranglerEnvironmentFlag, runBundler } from "../../core/utils/run-bundler.js";
+import { runBundler } from "../../core/utils/run-bundler.js";
 import { populateCache } from "./populate-cache.js";
+import path from "path";
+import { copyAssets } from "../../core/utils/copy-assets.js";
 
 export async function deploy(
   options: BuildOptions,
   config: OpenNextConfig,
-  deployOptions: { passthroughArgs: string[] }
+  deployOptions: { assetsDir: string; cacheDir: string; bundlerVersion: string; passthroughArgs: string[] }
 ) {
-  await populateCache(options, config, {
-    environment: getWranglerEnvironmentFlag(deployOptions.passthroughArgs),
+  // Run the build command
+  runBundler(options, ["build", ...deployOptions.passthroughArgs], {
+    logging: "all",
+    version: deployOptions.bundlerVersion,
   });
 
-  runBundler(options, ["deploy", ...deployOptions.passthroughArgs], { logging: "all" });
+  // Copy static assets to the cache directory
+  copyAssets(path.join(options.outputDir, "assets"), path.join(deployOptions.assetsDir));
+
+  // Populate the cache
+  await populateCache(options, config, {
+    cacheDir: deployOptions.cacheDir,
+  });
 }

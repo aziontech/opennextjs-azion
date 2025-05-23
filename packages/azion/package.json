@@ -14,7 +14,7 @@
     "test:watch": "vitest"
   },
   "bin": {
-    "opennextjs-azion": "dist/core/index.js"
+    "opennextjs-azion": "dist/index.js"
   },
   "main": "./dist/api/index.js",
   "types": "./dist/api/index.d.ts",

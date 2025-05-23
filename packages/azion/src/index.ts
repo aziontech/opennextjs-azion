@@ -6,14 +6,12 @@ import { compileOpenNextConfig } from "@opennextjs/aws/build/compileConfig.js";
 import { normalizeOptions } from "@opennextjs/aws/build/helper.js";
 import { printHeader, showWarningOnWindows } from "@opennextjs/aws/build/utils.js";
 import logger from "@opennextjs/aws/logger.js";
-
-import { Arguments, getArgs } from "../cli/args.js";
-import { build } from "./build/build.js";
-import { createOpenNextConfigIfNotExistent, ensureAzionConfig } from "./build/utils/index.js";
-import { deploy } from "../cli/commands/deploy.js";
-import { populateCache } from "../cli/commands/populate-cache.js";
-import { preview } from "../cli/commands/preview.js";
-import { upload } from "../cli/commands/upload.js";
+import { Arguments, getArgs } from "./cli/args.js";
+import { build } from "./cli/commands/build.js";
+import { createOpenNextConfigIfNotExistent, ensureAzionConfig } from "./core/build/utils/index.js";
+import { deploy } from "./cli/commands/deploy.js";
+import { populateCache } from "./cli/commands/populate-cache.js";
+import { preview } from "./cli/commands/preview.js";
 
 const nextAppDir = process.cwd();
 
@@ -47,13 +45,8 @@ async function runCommand(args: Arguments) {
       return preview(options, config, args);
     case "deploy":
       return deploy(options, config, args);
-    case "upload":
-      return upload(options, config, args);
     case "populateCache":
-      return populateCache(options, config, {
-        ...args,
-        destinationCacheDir: args.destinationCacheDir || ".edge/storage",
-      });
+      return populateCache(options, config, args);
   }
 }
 
