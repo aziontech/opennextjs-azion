@@ -30,44 +30,20 @@ class StorageIncrementalCache implements IncrementalCache {
     key: string,
     cacheType?: CacheType
   ): Promise<WithLastModified<CacheValue<CacheType>> | null> {
-    debugCache(`Get ${key}`, cacheType);
+    debugCache(`StorageIncrementalCache - Get ${key}`, cacheType);
     try {
-      const azionContext = getAzionContext();
-      const responseCacheAPI = await CacheApi.getCacheAPI(
-        `${this.storageCachePrefix}_${azionContext.env.AZION?.CACHE_API_STORAGE_NAME}`,
-        key
-      ).catch((e) => {
-        debugCache("Error CacheApi", e.message);
+      const cacheContent = await this.getCacheApiOrStorage(key, cacheType ?? "cache");
+      if (!cacheContent) {
+        debugCache(`StorageIncrementalCache - MISS for key: ${key}`);
         return null;
-      });
-
-      if (responseCacheAPI) {
-        debugCache("Response Cache API by key:", key);
-        const cacheApiContentParsed = JSON.parse(responseCacheAPI);
-        return {
-          value: cacheApiContentParsed,
-          lastModified: cacheApiContentParsed.lastModified
-            ? Number(cacheApiContentParsed.lastModified)
-            : (globalThis as { __BUILD_TIMESTAMP_MS__?: number }).__BUILD_TIMESTAMP_MS__,
-        };
       }
-
-      // Storage API
-      const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION?.BUCKET_PREFIX);
-      // bind the env to the worker
-      const cacheValue = await azionContext.env.AZION?.Storage.get(keyURL);
-      if (!cacheValue) throw new IgnorableError(`Cache miss for ${key}`);
-
-      const cacheContentArray = await cacheValue.arrayBuffer();
-      const decoder = new TextDecoder();
-      const cacheContent = JSON.parse(decoder.decode(cacheContentArray));
-
-      debugCache("Cache by Storage API:", key);
+      debugCache(`StorageIncrementalCache - HIT for key: ${key}`, cacheType);
+      const cacheValueParsed = JSON.parse(cacheContent);
       return {
-        value: cacheContent,
+        value: cacheValueParsed,
         // __BUILD_TIMESTAMP_MS__ is injected by ESBuild.
-        lastModified: cacheContent.lastModified
-          ? Number(cacheContent.lastModified)
+        lastModified: cacheValueParsed.lastModified
+          ? Number(cacheValueParsed.lastModified)
           : (globalThis as { __BUILD_TIMESTAMP_MS__?: number }).__BUILD_TIMESTAMP_MS__,
       };
     } catch (e) {
@@ -82,43 +58,17 @@ class StorageIncrementalCache implements IncrementalCache {
     cacheType?: CacheType
   ): Promise<void> {
     try {
-      debugCache(`Set ${key}`, cacheType);
-      const azionContext = getAzionContext();
-
-      const newCacheValue = JSON.stringify({
-        ...value,
-        lastModified: Date.now(),
-      });
-
-      // Cache API
-      await CacheApi.putCacheAPIkey(
-        `${this.storageCachePrefix}_${azionContext.env.AZION?.CACHE_API_STORAGE_NAME}`,
-        key,
-        newCacheValue
-      ).catch((e) => {
-        debugCache("Error CacheApi on PUT", e.message);
-        return null;
-      });
-
-      // Storage API
-      const encoder = new TextEncoder();
-      const newCacheValueBuffer = encoder.encode(newCacheValue);
-      const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION?.BUCKET_PREFIX);
-      await azionContext.env.AZION?.Storage.put(keyURL, newCacheValueBuffer, {
-        metadata: { id: `${BUILD_ID}` },
-      });
-
-      debugCache("Put Storage API:", key);
+      debugCache(`StorageIncrementalCache - Set ${key}`, cacheType);
+      await this.setCacheApiOrStorage(key, value, cacheType ?? "cache");
     } catch (e) {
       throw new RecoverableError(`Failed to set cache [${key}]`);
     }
   }
 
   async delete(key: string): Promise<void> {
-    debugCache(`Delete ${key}`);
-
+    debugCache(`StorageIncrementalCache - Delete ${key}`);
     try {
-      console.log(`delete ${key}`);
+      debugCache(`StorageIncrementalCache - Deleting cache for key: ${key}`);
     } catch {
       throw new RecoverableError(`Failed to delete cache [${key}]`);
     }
@@ -132,6 +82,60 @@ class StorageIncrementalCache implements IncrementalCache {
         : `${bucketPrefix}/${CACHE_DIR}/${buildId}/${key}.cache`
     ).replace(/\/+/g, "/");
     return name;
+  }
+
+  protected async getCacheApiOrStorage(key: string, cacheType: CacheEntryType): Promise<string> {
+    const azionContext = getAzionContext();
+    const resCacheAPI = await CacheApi.getCacheAPI(
+      `${this.storageCachePrefix}_${azionContext.env.AZION?.CACHE_API_STORAGE_NAME}`,
+      key
+    ).catch((e) => {
+      debugCache(e.message);
+      return null;
+    });
+    if (resCacheAPI) {
+      debugCache("StorageIncrementalCache - Cache API HIT for key:", key);
+      return resCacheAPI;
+    }
+    debugCache("StorageIncrementalCache - MISS for key:", key, "falling back to storage");
+    const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION?.BUCKET_PREFIX);
+    const fileValue = await azionContext.env.AZION?.Storage.get(keyURL);
+    if (!fileValue) throw new IgnorableError(`StorageIncrementalCache - Cache file not found at ${key}`);
+    const fileValueArray = await fileValue.arrayBuffer();
+    const decoder = new TextDecoder();
+    const cacheContent = decoder.decode(fileValueArray);
+    return cacheContent;
+  }
+
+  protected async setCacheApiOrStorage(
+    key: string,
+    value: CacheValue<CacheEntryType>,
+    cacheType: CacheEntryType
+  ): Promise<void> {
+    const azionContext = getAzionContext();
+    const newCacheValue = JSON.stringify({
+      ...value,
+      lastModified: Date.now(),
+    });
+
+    // Cache API
+    await CacheApi.putCacheAPIkey(
+      `${this.storageCachePrefix}_${azionContext.env.AZION?.CACHE_API_STORAGE_NAME}`,
+      key,
+      newCacheValue
+    ).catch((e) => {
+      debugCache(e.message);
+      return null;
+    });
+
+    // Storage API
+    const encoder = new TextEncoder();
+    const newCacheValueBuffer = encoder.encode(newCacheValue);
+    const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION?.BUCKET_PREFIX);
+    await azionContext.env.AZION?.Storage.put(keyURL, newCacheValueBuffer, {
+      metadata: { id: `${BUILD_ID}` },
+    });
+    debugCache("StorageIncrementalCache - written to storage for key:", key);
   }
 }
 

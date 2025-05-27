@@ -14,6 +14,7 @@ import { compileEnvFiles } from "../../core/build/open-next/compile-env-files.js
 import { compileInit } from "../../core/build/open-next/compile-init.js";
 import { createServerBundle } from "../../core/build/open-next/createServerBundle.js";
 import { getVersion } from "../../core/build/utils/version.js";
+import { compileTagAssets } from "../../api/compile-tag-assets.js";
 
 /**
  * Builds the application in a format that can be passed to workerd
@@ -70,7 +71,10 @@ export async function build(
   createStaticAssets(options);
 
   if (config.dangerous?.disableIncrementalCache !== true) {
-    createCacheAssets(options);
+    const { useTagCache, metaFiles } = createCacheAssets(options);
+    if (useTagCache) {
+      await compileTagAssets(metaFiles, options);
+    }
   }
 
   await createServerBundle(options);
