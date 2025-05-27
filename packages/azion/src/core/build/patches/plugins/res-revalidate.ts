@@ -1,4 +1,8 @@
 /**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
+/**
  * This patch will replace code used for `res.revalidate` in page router
  * Without the patch it uses `fetch` to make a call to itself, which doesn't work once deployed in cloudflare workers
  * This patch will replace this fetch by a call to `WORKER_SELF_REFERENCE` service binding
@@ -62,7 +66,6 @@ rule:
 
 fix: await (await import("@opennextjs/azion")).getAzionContext().env.WORKER_SELF_REFERENCE.fetch(\`\${$REQ.headers.host.includes("localhost") ? "http":"https" }://\${$REQ.headers.host}$URL_PATH\`,{method:'HEAD', headers:$HEADERS})
 `;
-// TODO: FETCH revalidate
 export const patchResRevalidate: CodePatcher = {
   name: "patch-res-revalidate",
   patches: [

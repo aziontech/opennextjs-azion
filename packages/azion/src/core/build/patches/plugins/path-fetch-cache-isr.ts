@@ -1,4 +1,7 @@
-//TODO: entry copyright aws
+/**
+ * This code was originally copied and modified from the @opennextjs/aws repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 import { createPatchCode } from "@opennextjs/aws/build/patch/astCodePatcher.js";
 import type { CodePatcher } from "@opennextjs/aws/build/patch/codePatcher.js";
 import { getCrossPlatformPathRegex } from "@opennextjs/aws/utils/regex.js";

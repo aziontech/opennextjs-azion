@@ -1,3 +1,7 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 import { copyFileSync, existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
@@ -11,7 +15,7 @@ import { patchVercelOgFallbackFont, patchVercelOgImport } from "./vercel-og.js";
 type TraceInfo = { version: number; files: string[] };
 
 /**
- * Patches the usage of @vercel/og to be compatible with Cloudflare Workers.
+ * Patches the usage of @vercel/og to be compatible with Azion Workers.
  *
  * @param buildOpts Build options.
  */

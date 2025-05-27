@@ -1,3 +1,8 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/aws repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
+
 import type { TagCache } from "@opennextjs/aws/types/overrides";
 import { getAzionContext } from "../../../api";
 import { IgnorableError } from "@opennextjs/aws/utils/error.js";

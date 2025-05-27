@@ -1,3 +1,7 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 import logger from "@opennextjs/aws/logger.js";
 import { cpSync, existsSync, rmSync } from "fs";
 import path from "path";

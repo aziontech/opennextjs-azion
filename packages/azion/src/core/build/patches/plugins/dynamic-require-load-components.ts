@@ -1,8 +1,3 @@
-/**
- * Inline `loadClientReferenceManifest` as it relies on dynamic `require` calls
- * that are not supported by workerd.
- */
-
 import { join, posix, relative, sep } from "node:path";
 
 import { type BuildOptions, getPackagePath } from "@opennextjs/aws/build/helper.js";

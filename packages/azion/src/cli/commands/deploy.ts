@@ -1,3 +1,7 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 import { BuildOptions } from "@opennextjs/aws/build/helper.js";
 import { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 

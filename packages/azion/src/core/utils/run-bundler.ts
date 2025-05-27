@@ -1,3 +1,7 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";

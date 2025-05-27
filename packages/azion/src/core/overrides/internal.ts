@@ -1,3 +1,7 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 import { CacheValue, CacheEntryType } from "@opennextjs/aws/types/overrides.js";
 
 export type IncrementalCacheEntry<CacheType extends CacheEntryType> = {

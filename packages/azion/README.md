@@ -28,14 +28,14 @@ Run the following commands to preview the production build of your application l
   bun opennextjs-azion build
   ```
 
-- Preview the app in Wrangler
+- Preview the app in Azion
 
   ```bash
-  npx edge-functions dev
+  npx opennextjs-azion preview
   # or
-  pnpm edge-functions dev
+  pnpm opennextjs-azion preview
   # or
-  yarn edge-functions dev
+  yarn opennextjs-azion preview
   ```
 
 ## Deploy your app

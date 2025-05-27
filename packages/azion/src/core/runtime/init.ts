@@ -1,4 +1,8 @@
 /**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
+/**
  * Initialization for the workerd runtime.
  *
  * The file must be imported at the top level the worker.

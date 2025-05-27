@@ -1,3 +1,8 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
+
 import { error } from "@opennextjs/aws/adapters/logger.js";
 import type { Queue, QueueMessage } from "@opennextjs/aws/types/overrides.js";
 import { IgnorableError } from "@opennextjs/aws/utils/error.js";

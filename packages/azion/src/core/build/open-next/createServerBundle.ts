@@ -1,6 +1,8 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 // Copy-Edit of @opennextjs/aws packages/open-next/src/build/createServerBundle.ts
-// Adapted for azion workers
-
 import fs from "node:fs";
 import path from "node:path";
 

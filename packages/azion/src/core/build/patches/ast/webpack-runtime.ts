@@ -1,4 +1,8 @@
 /**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
+/**
  * Inline dynamic requires in the webpack runtime.
  *
  * The webpack runtime has dynamic requires that would not be bundled by ESBuild:

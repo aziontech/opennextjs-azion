@@ -1,3 +1,7 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 // default open-next.config.ts file created by @opennextjs/azion
 import { defineAzionConfig } from "@opennextjs/azion/config";
 import StorageIncrementalCache from "@opennextjs/azion/overrides/incremental-cache/storage-incremental-cache";

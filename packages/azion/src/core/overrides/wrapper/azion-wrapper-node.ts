@@ -1,3 +1,8 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
+
 import type { InternalEvent, InternalResult, StreamCreator } from "@opennextjs/aws/types/open-next";
 import type { Wrapper, WrapperHandler } from "@opennextjs/aws/types/overrides";
 
@@ -13,7 +18,6 @@ const handler: WrapperHandler<InternalEvent, InternalResult> =
     globalThis.process = process;
 
     // Set the environment variables
-    // Cloudflare suggests to not override the process.env object but instead apply the values to it
     for (const [key, value] of Object.entries(env)) {
       if (typeof value === "string") {
         process.env[key] = value;

@@ -1,7 +1,3 @@
-/**
- * Inline `getBuildId` as it relies on `readFileSync` that is not supported by workerd.
- */
-
 import { patchCode } from "@opennextjs/aws/build/patch/astCodePatcher.js";
 import type { ContentUpdater, Plugin } from "@opennextjs/aws/plugins/content-updater.js";
 import { getCrossPlatformPathRegex } from "@opennextjs/aws/utils/regex.js";

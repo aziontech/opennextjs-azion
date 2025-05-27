@@ -1,3 +1,8 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
+
 import { BaseOverride, LazyLoadedOverride, OpenNextConfig } from "@opennextjs/aws/types/open-next";
 import type { IncrementalCache, Queue, TagCache, Wrapper } from "@opennextjs/aws/types/overrides";
 

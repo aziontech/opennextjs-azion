@@ -1,3 +1,7 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 import { buildNextjsApp, setStandaloneBuildMode } from "@opennextjs/aws/build/buildNextApp.js";
 import { compileCache } from "@opennextjs/aws/build/compileCache.js";
 import { createCacheAssets, createStaticAssets } from "@opennextjs/aws/build/createAssets.js";

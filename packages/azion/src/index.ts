@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 import { createRequire } from "node:module";
 import path from "node:path";
 

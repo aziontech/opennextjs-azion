@@ -85,7 +85,7 @@ Build and preview a Next.js sample application. For example, the `api` applicati
 pnpm --filter api preview
 ```
 
-You can skip building the Next.js app when it has not been modified, and only run the Cloudflare adaptor tool:
+You can skip building the Next.js app when it has not been modified, and only run the Azion adaptor tool:
 
 ```sh
 SKIP_NEXT_APP_BUILD=true pnpm --filter api preview

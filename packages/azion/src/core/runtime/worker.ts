@@ -1,3 +1,8 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
+
 //@ts-expect-error: Will be resolved by wrangler build
 import { runWithAzionRequestContext } from "./azion/init.js";
 
