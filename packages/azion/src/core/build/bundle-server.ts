@@ -26,9 +26,12 @@ import { patchDepdDeprecations } from "./patches/plugins/patch-depd-deprecations
 import { fixRequire } from "./patches/plugins/require.js";
 import { shimRequireHook } from "./patches/plugins/require-hook.js";
 import { needsExperimentalReact, normalizePath, patchCodeWithValidations } from "./utils/index.js";
-import { inlinePatchRenderUrl } from "./patches/plugins/patch-render-url.js";
 import { inlineDynamicRequireLoadComponents } from "./patches/plugins/dynamic-require-load-components.js";
 import { inlinePatchRewriteRouter } from "./patches/plugins/patch-rewrite-router.js";
+import {
+  inlinePatchRewriteInvokeHeaders,
+  inlinePatchRewriteURLSource,
+} from "./patches/plugins/patch-rewrite-invoke-headers.js";
 
 /** The dist directory of the Azion package */
 const packageDistDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../");
@@ -104,10 +107,11 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       inlineFindDir(updater, buildOpts),
       inlineLoadManifest(updater, buildOpts),
       inlineBuildId(updater),
-      inlinePatchRenderUrl(updater),
       patchDepdDeprecations(updater),
       patchNextMinimal(updater),
       inlinePatchRewriteRouter(updater),
+      inlinePatchRewriteInvokeHeaders(updater),
+      inlinePatchRewriteURLSource(updater),
       // Apply updater updates, must be the last plugin
       updater.plugin,
     ] as Plugin[],
