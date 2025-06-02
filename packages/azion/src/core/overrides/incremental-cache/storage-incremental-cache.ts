@@ -104,7 +104,10 @@ class StorageIncrementalCache implements IncrementalCache {
     }
     debugCache("StorageIncrementalCache - MISS for key:", key, "falling back to storage");
     const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION?.BUCKET_PREFIX);
-    const fileValue = await azionContext.env.AZION?.Storage.get(keyURL);
+    const fileValue = await azionContext.env.AZION?.Storage.get(keyURL).catch((e) => {
+      debugCache(`StorageIncrementalCache - Cache file not exist: ${e.message}`);
+      return null;
+    });
     if (!fileValue) throw new IgnorableError(`StorageIncrementalCache - Cache file not found at ${key}`);
     const fileValueArray = await fileValue.arrayBuffer();
     const decoder = new TextDecoder();

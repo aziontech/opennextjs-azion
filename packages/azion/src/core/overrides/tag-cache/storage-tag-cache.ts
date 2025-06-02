@@ -21,7 +21,15 @@ type TagsManifest = {
 const getTagManifestStorage = async (filePath: string): Promise<string> => {
   const azionContext = getAzionContext();
   const storagePath = `${azionContext.env.AZION?.BUCKET_PREFIX}/${CACHE_DIR}/${filePath}`;
-  const fileValue = await azionContext.env.AZION?.Storage.get(storagePath);
+  const fileValue = await azionContext.env.AZION?.Storage.get(storagePath).catch((e) => {
+    debugCache("Tag Manifest Storage - Error get file:", e.message);
+    // return Array buffer { items: [] } if the file is not found
+    const encoder = new TextEncoder();
+    const emptyManifest = encoder.encode(JSON.stringify({ items: [] }));
+    return {
+      arrayBuffer: async () => emptyManifest,
+    } as unknown as Blob;
+  });
   if (!fileValue) throw new IgnorableError(`StorageTagCache - Tag file not found at ${filePath}`);
   const fileValueArray = await fileValue.arrayBuffer();
   const decoder = new TextDecoder();
@@ -33,7 +41,7 @@ const getTagManifestStorage = async (filePath: string): Promise<string> => {
     CACHE_TAGS_MANIFEST,
     manifestContent
   ).catch((e) => {
-    debugCache(e.message);
+    debugCache(`StorageTagCache - Error writing tags manifest to cache API: ${e.message}`);
     return null;
   });
   debugCache("StorageTagCache - Tags manifest written to cache API");
