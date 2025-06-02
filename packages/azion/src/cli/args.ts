@@ -36,7 +36,7 @@ export function getArgs(): Arguments {
       skipBuild: { type: "boolean", short: "s", default: false },
       output: { type: "string", short: "o" },
       noMinify: { type: "boolean", default: false },
-      bundlerVersion: { type: "string", default: "5.2.0-stage.2" },
+      bundlerVersion: { type: "string", default: "5.2.0-stage.5" },
     },
     allowPositionals: true,
   });
