@@ -196,6 +196,27 @@ export async function updateWorkerBundledCode(
       // workers do not support dynamic require nor require.resolve
       (code) => code.replace('require.resolve("./composable-cache.cjs")', '"unused"'),
     ],
+    // TODO: this is a temporary patch
+    [
+      "`replace var assignment with new Date` call",
+      (code) =>
+        code.replace(
+          /var\s+([A-Za-z_$][\w$]*)\s*=\s*([A-Za-z_$][\w$]*)\.expires\s*;/g,
+          "var $1 = new Date($2.expires);"
+        ),
+    ],
+    [
+      "`fix [object Object] expires` call",
+      (code) =>
+        code.replace(
+          /"\[object Date\]"\s*!==\s*([A-Za-z_$][\w$]*)\.call\(([A-Za-z_$][\w$]*)\)/g,
+          '"[object Object]" !== $1.call($2)'
+        ),
+    ],
+    [
+      "`remove ! from isDate(expires)` call",
+      (code) => code.replace(/!isDate\s*\(\s*expires\s*\)/g, "isDate(expires)"),
+    ],
   ]);
 
   await writeFile(workerOutputFile, patchedCode);
