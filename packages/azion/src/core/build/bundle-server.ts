@@ -32,6 +32,7 @@ import {
   inlinePatchRewriteInvokeHeaders,
   inlinePatchRewriteURLSource,
 } from "./patches/plugins/patch-rewrite-invoke-headers.js";
+import { patchPagesRouterContext } from "./patches/plugins/pages-router-context.js";
 
 /** The dist directory of the Azion package */
 const packageDistDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../");
@@ -103,6 +104,7 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       fixRequire(updater),
       handleOptionalDependencies(optionalDependencies),
       patchInstrumentation(updater, buildOpts),
+      patchPagesRouterContext(buildOpts),
       inlineEvalManifest(updater, buildOpts),
       inlineFindDir(updater, buildOpts),
       inlineLoadManifest(updater, buildOpts),
