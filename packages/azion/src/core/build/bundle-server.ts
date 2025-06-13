@@ -128,6 +128,13 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       //   eval("require")("bufferutil");
       //   eval("require")("utf-8-validate");
       "next/dist/compiled/ws": path.join(buildOpts.outputDir, "azion-runtime/shims/empty.js"),
+      // The toolbox optimizer pulls severals MB of dependencies (`caniuse-lite`, `terser`, `acorn`, ...)
+      // Drop it to optimize the code size
+      // See https://github.com/vercel/next.js/blob/6eb235c/packages/next/src/server/optimize-amp.ts
+      "next/dist/compiled/@ampproject/toolbox-optimizer": path.join(
+        buildOpts.outputDir,
+        "azion-runtime/shims/throw.js"
+      ),
       // Note: we apply an empty shim to next/dist/compiled/edge-runtime since (amongst others) it generated the following `eval`:
       //   eval(getModuleCode)(module, module.exports, throwingRequire, params.context, ...Object.values(params.scopedContext));
       //   which comes from https://github.com/vercel/edge-runtime/blob/6e96b55f/packages/primitives/src/primitives/load.js#L57-L63
