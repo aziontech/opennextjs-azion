@@ -3,7 +3,6 @@
  * Significant changes have been made to adapt it for use with Azion.
  */
 
-import { error } from "@opennextjs/aws/adapters/logger.js";
 import type {
   CacheEntryType,
   CacheValue,
@@ -42,7 +41,6 @@ class StorageIncrementalCache implements IncrementalCache {
         debugCache(`StorageIncrementalCache - MISS for key: ${key}`);
         return null;
       }
-      debugCache(`StorageIncrementalCache - HIT for key: ${key}`, cacheType);
       const cacheValueParsed = JSON.parse(cacheContent);
       return {
         value: cacheValueParsed,
@@ -52,7 +50,7 @@ class StorageIncrementalCache implements IncrementalCache {
           : (globalThis as { __BUILD_TIMESTAMP_MS__?: number }).__BUILD_TIMESTAMP_MS__,
       };
     } catch (e) {
-      error("Failed to get from cache", e);
+      debugCache("Failed to get from cache", (e as Error)?.message);
       return null;
     }
   }
@@ -99,26 +97,35 @@ class StorageIncrementalCache implements IncrementalCache {
       return null;
     });
     if (resCacheAPI) {
-      debugCache("StorageIncrementalCache - Cache API HIT for key:", key);
+      debugCache("StorageIncrementalCache - HIT by CACHE_API for key:", key);
       return resCacheAPI;
     }
-    debugCache("StorageIncrementalCache - MISS for key:", key, "falling back to storage");
+    debugCache("StorageIncrementalCache - MISS by CACHE_API for key:", key, "falling back to storage");
     const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION?.BUCKET_PREFIX);
-    const fileValue = await azionContext.env.AZION?.Storage.get(keyURL).catch((e) => {
-      debugCache(`StorageIncrementalCache - Cache file not exist: ${e.message}`);
+    const fileValue = await azionContext.env.AZION?.Storage.get(keyURL).catch(() => {
+      debugCache(`StorageIncrementalCache - Cache file not exist on storage`);
       return null;
     });
     if (!fileValue) throw new IgnorableError(`StorageIncrementalCache - Cache file not found at ${key}`);
     const fileValueArray = await fileValue.arrayBuffer();
     const decoder = new TextDecoder();
     const cacheContent = decoder.decode(fileValueArray);
+    debugCache("StorageIncrementalCache - HIT by Storage for key:", key);
+    // set cache API because ssg pages are not stored in first run
+    if (!resCacheAPI) {
+      debugCache("StorageIncrementalCache - Setting CACHE_API FIRST TIME:", key);
+      this.setCacheApiOrStorage(key, JSON.parse(cacheContent), cacheType, true).catch((e) => {
+        debugCache("Failed to set cache API:", e.message);
+      });
+    }
     return cacheContent;
   }
 
   protected async setCacheApiOrStorage(
     key: string,
     value: CacheValue<CacheEntryType>,
-    cacheType: CacheEntryType
+    cacheType: CacheEntryType,
+    onlyCacheApi = false
   ): Promise<void> {
     const azionContext = getAzionContext();
     const newCacheValue = JSON.stringify({
@@ -137,6 +144,9 @@ class StorageIncrementalCache implements IncrementalCache {
     });
 
     // Storage API
+    if (onlyCacheApi) {
+      return;
+    }
     const encoder = new TextEncoder();
     const newCacheValueBuffer = encoder.encode(newCacheValue);
     const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION?.BUCKET_PREFIX);

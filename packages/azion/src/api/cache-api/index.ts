@@ -14,7 +14,6 @@ class CacheApi {
         const res = await result.text();
         return res;
       }
-      debugCache("CacheApi - MISS for key:", key);
       return null;
     } catch (e) {
       debugCache("Get CacheApi error:", (e as any).message);
