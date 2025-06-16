@@ -161,6 +161,9 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       // This define should be safe to use for Next 14.2+, earlier versions (13.5 and less) will cause trouble
       "process.env.__NEXT_EXPERIMENTAL_REACT": `${needsExperimentalReact(nextConfig)}`,
     },
+    banner: {
+      js: `import {setInterval, clearInterval, setTimeout, clearTimeout, setImmediate, clearImmediate} from "node:timers"`,
+    },
     platform: "node",
   });
 
