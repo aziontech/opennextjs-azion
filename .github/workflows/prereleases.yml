@@ -3,7 +3,7 @@ name: Publish prereleases
 on:
   push:
     branches: [experimental]
-  # pull_request:
+  pull_request:
 
 jobs:
   release:
@@ -22,6 +22,6 @@ jobs:
 
       - name: Build
         run: pnpm -F azion run build
-      # need install pkg-pr-new on organization aziontech
-      # - name: Publish to NPM
-      #   run: pnpm exec pkg-pr-new publish --pnpm --compact './packages/azion'
+
+      - name: Publish to NPM
+        run: pnpm exec pkg-pr-new publish --pnpm --compact './packages/azion'
