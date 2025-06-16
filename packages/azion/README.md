@@ -2,6 +2,11 @@
 
 Deploy Next.js apps to Azion!
 
+<!-- TODO: this will be available when the package is integrated into the openenextjs organization -->
+
+> **Warning**  
+> This will be available when the package is integrated into the openenextjs organization .
+
 [OpenNext for Azion](https://opennext.js.org/azion) is a Azion specific adapter that enables deployment of Next.js applications to Azion.
 
 ## Get started

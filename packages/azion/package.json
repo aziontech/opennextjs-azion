@@ -1,5 +1,5 @@
 {
-  "name": "@opennextjs/azion",
+  "name": "opennextjs-azion",
   "description": "Azion builder for next apps",
   "version": "0.0.0",
   "type": "module",
@@ -38,11 +38,11 @@
   "files": [
     "README.md",
     "dist",
-    "runtime"
+    "templates"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/opennextjs/opennextjs-azion.git",
+    "url": "git+https://github.com/aziontech/opennextjs-azion.git",
     "directory": "packages/azion"
   },
   "keywords": [
@@ -53,9 +53,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/opennextjs/opennextjs-azion/issues"
+    "url": "https://github.com/aziontech/opennextjs-azion/issues"
   },
-  "homepage": "https://github.com/opennextjs/opennextjs-azion",
+  "homepage": "https://github.com/aziontech/opennextjs-azion",
   "dependencies": {
     "@dotenvx/dotenvx": "catalog:",
     "@opennextjs/aws": "~3.6.0",
