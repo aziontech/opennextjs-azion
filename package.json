@@ -11,7 +11,7 @@
   },
   "scripts": {
     "fix": "pnpm prettier:fix && pnpm lint:fix",
-    "build": "pnpm --filter azion build",
+    "build": "pnpm --filter @aziontech/opennextjs-azion build",
     "test": "pnpm -r test",
     "e2e": "pnpm build && pnpm -r e2e",
     "e2e:dev": "pnpm build && pnpm -r e2e:dev",
@@ -22,6 +22,6 @@
     "ts:check": "pnpm -r ts:check",
     "code:checks": "pnpm prettier:check && pnpm lint:check && pnpm ts:check",
     "install-playwright": "playwright install --with-deps",
-    "postinstall": "pnpm --filter azion build"
+    "postinstall": "pnpm --filter @aziontech/opennextjs-azion build"
   }
 }
