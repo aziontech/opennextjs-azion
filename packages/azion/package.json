@@ -1,5 +1,5 @@
 {
-  "name": "@opennextjs/azion",
+  "name": "@aziontech/opennextjs-azion",
   "description": "Azion builder for next apps",
   "version": "0.0.0",
   "type": "module",
@@ -14,11 +14,16 @@
     "test:watch": "vitest"
   },
   "bin": {
-    "opennextjs-azion": "dist/core/index.js"
+    "opennextjs-azion": "dist/index.js"
   },
   "main": "./dist/api/index.js",
   "types": "./dist/api/index.d.ts",
   "exports": {
+    "./overrides/*": {
+      "import": "./dist/core/overrides/*.js",
+      "types": "./dist/core/overrides/*.d.ts",
+      "default": "./dist/core/overrides/*.js"
+    },
     ".": {
       "import": "./dist/api/index.js",
       "types": "./dist/api/index.d.ts",
@@ -33,11 +38,11 @@
   "files": [
     "README.md",
     "dist",
-    "runtime"
+    "templates"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/opennextjs/opennextjs-azion.git",
+    "url": "git+https://github.com/aziontech/opennextjs-azion.git",
     "directory": "packages/azion"
   },
   "keywords": [
@@ -48,12 +53,12 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/opennextjs/opennextjs-azion/issues"
+    "url": "https://github.com/aziontech/opennextjs-azion/issues"
   },
-  "homepage": "https://github.com/opennextjs/opennextjs-azion",
+  "homepage": "https://github.com/aziontech/opennextjs-azion",
   "dependencies": {
     "@dotenvx/dotenvx": "catalog:",
-    "@opennextjs/aws": "3.5.6",
+    "@opennextjs/aws": "~3.6.0",
     "enquirer": "^2.4.1",
     "glob": "catalog:",
     "ts-tqdm": "^0.8.6"

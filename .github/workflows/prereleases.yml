@@ -2,12 +2,12 @@ name: Publish prereleases
 
 on:
   push:
-    branches: [main, experimental]
-  pull_request:
+    branches: [experimental]
+  # pull_request:
 
 jobs:
   release:
-    if: ${{ github.repository_owner == 'opennextjs' }}
+    if: ${{ github.repository_owner == 'aziontech' }} # TODO: change to org opennextjs when ready
     name: Publish builder package
     runs-on: ubuntu-latest
 
@@ -22,6 +22,6 @@ jobs:
 
       - name: Build
         run: pnpm -F azion run build
-
-      - name: Publish to NPM
-        run: pnpm exec pkg-pr-new publish --pnpm --compact './packages/azion'
+      # need install pkg-pr-new on organization aziontech
+      # - name: Publish to NPM
+      #   run: pnpm exec pkg-pr-new publish --pnpm --compact './packages/azion'

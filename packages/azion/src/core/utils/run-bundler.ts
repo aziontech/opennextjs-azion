@@ -1,3 +1,7 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -5,8 +9,6 @@ import path from "node:path";
 import type { BuildOptions } from "@opennextjs/aws/build/helper.js";
 import { compareSemver } from "@opennextjs/aws/build/helper.js";
 import logger from "@opennextjs/aws/logger.js";
-
-export type WranglerTarget = "local" | "remote";
 
 type BundlerOptions = {
   port?: number;
@@ -43,6 +45,10 @@ function isYarnModern(options: BuildOptions) {
  * @returns Arguments with a passthrough flag injected when needed.
  */
 function injectPassthroughFlagForArgs(options: BuildOptions, args: string[]) {
+  if (options.packager === "yarn" && !isYarnModern(options)) {
+    return args;
+  }
+
   if (options.packager !== "npm" && (options.packager !== "yarn" || isYarnModern(options))) {
     return args;
   }
@@ -56,10 +62,11 @@ function injectPassthroughFlagForArgs(options: BuildOptions, args: string[]) {
 }
 
 export function runBundler(options: BuildOptions, args: string[], bundlerOpts: BundlerOptions = {}) {
+  const yarnAndYarnClassic = options.packager === "yarn" && !isYarnModern(options);
   const result = spawnSync(
-    options.packager,
+    yarnAndYarnClassic ? "npx" : options.packager,
     [
-      options.packager === "bun" ? "x" : "exec",
+      yarnAndYarnClassic ? "" : options.packager === "bun" ? "x" : "exec",
       `edge-functions@${bundlerOpts.version ?? "latest"}`,
       ...injectPassthroughFlagForArgs(
         options,
@@ -71,7 +78,7 @@ export function runBundler(options: BuildOptions, args: string[], bundlerOpts: B
       stdio: bundlerOpts.logging === "error" ? ["ignore", "ignore", "inherit"] : "inherit",
       env: {
         ...process.env,
-        ...(bundlerOpts.logging === "error" ? { WRANGLER_LOG: "error" } : undefined),
+        ...(bundlerOpts.logging === "error" ? { BUNDLER_LOG: "error" } : undefined),
       },
     }
   );
@@ -79,26 +86,5 @@ export function runBundler(options: BuildOptions, args: string[], bundlerOpts: B
   if (result.status !== 0) {
     logger.error("Bundler command failed");
     process.exit(1);
-  }
-}
-
-/**
- * Find the value of the environment flag (`--env` / `-e`) used by Wrangler.
- *
- * @param args - CLI arguments.
- * @returns Value of the environment flag.
- */
-export function getWranglerEnvironmentFlag(args: string[]) {
-  for (let i = 0; i <= args.length; i++) {
-    const arg = args[i];
-    if (!arg) continue;
-
-    if (arg === "--env" || arg === "-e") {
-      return args[i + 1];
-    }
-
-    if (arg.startsWith("--env=") || arg.startsWith("-e=")) {
-      return arg.split("=")[1];
-    }
   }
 }

@@ -1,4 +1,8 @@
 /**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
+/**
  * Inline `evalManifest` as it relies on `readFileSync` and `runInNewContext`
  * that are not supported by workerd.
  */

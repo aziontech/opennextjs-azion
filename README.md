@@ -17,7 +17,7 @@ The repository contains two directories:
 - `packages` containing a azion package that can be used to build a Azion Workers-compatible output for Next.js applications.
 - `examples` containing Next.js applications that use the above mentioned azion package.
 
-### How to try out the `@opennextjs/azion` package
+### How to try out the `@aziontech/opennextjs-azion` package
 
 You can simply install the package from npm as specified in the [OpenNext documentation](https://opennext.js.org/azion/get-started).
 
@@ -25,15 +25,15 @@ You can simply install the package from npm as specified in the [OpenNext docume
 
 Besides the standard npm releases we also automatically publish prerelease packages on branch pushes (using [`pkg.pr.new`](https://github.com/stackblitz-labs/pkg.pr.new)):
 
-- `https://pkg.pr.new/@opennextjs/azion@main`:
+- `https://pkg.pr.new/@aziontech/opennextjs-azion@main`:
   Updated with every push to the `main` branch, this prerelease contains the most up to date yet (reasonably) stable version of the package.
-- `https://pkg.pr.new/@opennextjs/azion@experimental`
+- `https://pkg.pr.new/@aziontech/opennextjs-azion@experimental`
   Updated with every push to the `experimental` branch, this prerelease contains the latest experimental version of the package (containing features that we want to test/experiment on before committing to).
 
 Which you can simply install directly with your package manager of choice, for example:
 
 ```bash
-npm i https://pkg.pr.new/@opennextjs/azion@main
+npm i https://pkg.pr.new/@aziontech/opennextjs-azion@main
 ```
 
 ### How to develop in the repository

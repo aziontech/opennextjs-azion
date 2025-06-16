@@ -1,3 +1,7 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 import { patchCode } from "@opennextjs/aws/build/patch/astCodePatcher.js";
 import { ContentUpdater, type Plugin } from "@opennextjs/aws/plugins/content-updater.js";
 

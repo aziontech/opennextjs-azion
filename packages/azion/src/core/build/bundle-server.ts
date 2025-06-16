@@ -1,3 +1,7 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 import fs from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -11,6 +15,7 @@ import { patchVercelOgLibrary } from "./patches/ast/patch-vercel-og-library.js";
 import { patchWebpackRuntime } from "./patches/ast/webpack-runtime.js";
 import * as patches from "./patches/index.js";
 import { inlineBuildId } from "./patches/plugins/build-id.js";
+import { inlineDynamicRequireLoadComponents } from "./patches/plugins/dynamic-require-load-components.js";
 import { inlineDynamicRequires } from "./patches/plugins/dynamic-requires.js";
 import { inlineEvalManifest } from "./patches/plugins/eval-manifest.js";
 import { inlineFindDir } from "./patches/plugins/find-dir.js";
@@ -18,11 +23,16 @@ import { patchInstrumentation } from "./patches/plugins/instrumentation.js";
 import { inlineLoadManifest } from "./patches/plugins/load-manifest.js";
 import { patchNextMinimal } from "./patches/plugins/next-minimal.js";
 import { handleOptionalDependencies } from "./patches/plugins/optional-deps.js";
+import { patchPagesRouterContext } from "./patches/plugins/pages-router-context.js";
 import { patchDepdDeprecations } from "./patches/plugins/patch-depd-deprecations.js";
+import {
+  inlinePatchRewriteInvokeHeaders,
+  inlinePatchRewriteURLSource,
+} from "./patches/plugins/patch-rewrite-invoke-headers.js";
+import { inlinePatchRewriteRouter } from "./patches/plugins/patch-rewrite-router.js";
 import { fixRequire } from "./patches/plugins/require.js";
 import { shimRequireHook } from "./patches/plugins/require-hook.js";
 import { needsExperimentalReact, normalizePath, patchCodeWithValidations } from "./utils/index.js";
-import { inlinePatchRenderUrl } from "./patches/plugins/patch-render-url.js";
 
 /** The dist directory of the Azion package */
 const packageDistDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../");
@@ -89,17 +99,21 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
     conditions: [],
     plugins: [
       shimRequireHook(buildOpts),
+      inlineDynamicRequireLoadComponents(updater, buildOpts),
       inlineDynamicRequires(updater, buildOpts),
       fixRequire(updater),
       handleOptionalDependencies(optionalDependencies),
       patchInstrumentation(updater, buildOpts),
+      patchPagesRouterContext(buildOpts),
       inlineEvalManifest(updater, buildOpts),
       inlineFindDir(updater, buildOpts),
       inlineLoadManifest(updater, buildOpts),
       inlineBuildId(updater),
-      inlinePatchRenderUrl(updater),
       patchDepdDeprecations(updater),
       patchNextMinimal(updater),
+      inlinePatchRewriteRouter(updater),
+      inlinePatchRewriteInvokeHeaders(updater),
+      inlinePatchRewriteURLSource(updater),
       // Apply updater updates, must be the last plugin
       updater.plugin,
     ] as Plugin[],
@@ -114,6 +128,13 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       //   eval("require")("bufferutil");
       //   eval("require")("utf-8-validate");
       "next/dist/compiled/ws": path.join(buildOpts.outputDir, "azion-runtime/shims/empty.js"),
+      // The toolbox optimizer pulls severals MB of dependencies (`caniuse-lite`, `terser`, `acorn`, ...)
+      // Drop it to optimize the code size
+      // See https://github.com/vercel/next.js/blob/6eb235c/packages/next/src/server/optimize-amp.ts
+      "next/dist/compiled/@ampproject/toolbox-optimizer": path.join(
+        buildOpts.outputDir,
+        "azion-runtime/shims/throw.js"
+      ),
       // Note: we apply an empty shim to next/dist/compiled/edge-runtime since (amongst others) it generated the following `eval`:
       //   eval(getModuleCode)(module, module.exports, throwingRequire, params.context, ...Object.values(params.scopedContext));
       //   which comes from https://github.com/vercel/edge-runtime/blob/6e96b55f/packages/primitives/src/primitives/load.js#L57-L63
@@ -139,6 +160,9 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       "process.env.TURBOPACK": "false",
       // This define should be safe to use for Next 14.2+, earlier versions (13.5 and less) will cause trouble
       "process.env.__NEXT_EXPERIMENTAL_REACT": `${needsExperimentalReact(nextConfig)}`,
+    },
+    banner: {
+      js: `import {setInterval, clearInterval, setTimeout, clearTimeout, setImmediate, clearImmediate} from "node:timers"`,
     },
     platform: "node",
   });
@@ -178,6 +202,32 @@ export async function updateWorkerBundledCode(
       "`require.resolve` call",
       // workers do not support dynamic require nor require.resolve
       (code) => code.replace('require.resolve("./cache.cjs")', '"unused"'),
+    ],
+    [
+      "`require.resolve composable cache` call",
+      // workers do not support dynamic require nor require.resolve
+      (code) => code.replace('require.resolve("./composable-cache.cjs")', '"unused"'),
+    ],
+    // TODO: this is a temporary patch
+    [
+      "`replace var assignment with new Date` call",
+      (code) =>
+        code.replace(
+          /var\s+([A-Za-z_$][\w$]*)\s*=\s*([A-Za-z_$][\w$]*)\.expires\s*;/g,
+          "var $1 = new Date($2.expires);"
+        ),
+    ],
+    [
+      "`fix [object Object] expires` call",
+      (code) =>
+        code.replace(
+          /"\[object Date\]"\s*!==\s*([A-Za-z_$][\w$]*)\.call\(([A-Za-z_$][\w$]*)\)/g,
+          '"[object Object]" !== $1.call($2)'
+        ),
+    ],
+    [
+      "`remove ! from isDate(expires)` call",
+      (code) => code.replace(/!isDate\s*\(\s*expires\s*\)/g, "isDate(expires)"),
     ],
   ]);
 

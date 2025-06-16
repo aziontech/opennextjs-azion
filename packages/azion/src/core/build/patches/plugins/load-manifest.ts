@@ -1,4 +1,8 @@
 /**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
+/**
  * Inline `loadManifest` as it relies on `readFileSync` that is not supported by workerd.
  */
 
@@ -17,7 +21,7 @@ export function inlineLoadManifest(updater: ContentUpdater, buildOpts: BuildOpti
   return updater.updateContent("inline-load-manifest", [
     {
       field: {
-        filter: getCrossPlatformPathRegex(String.raw`/next/dist/server/load-manifest\.js$`, {
+        filter: getCrossPlatformPathRegex(String.raw`/next/dist/server/load-manifest(\.external)?\.js$`, {
           escape: false,
         }),
         contentFilter: /function loadManifest\(/,

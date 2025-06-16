@@ -42,8 +42,8 @@ body:
   - type: input
     id: opennext-version
     attributes:
-      label: "@opennextjs/azion version"
-      description: What version of @opennextjs/azion does this apply to?
+      label: "@aziontech/opennextjs-azion version"
+      description: What version of @aziontech/opennextjs-azion does this apply to?
       placeholder: "0.0.1"
     validations:
       required: true

@@ -1,5 +1,10 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
+
 import { BaseOverride, LazyLoadedOverride, OpenNextConfig } from "@opennextjs/aws/types/open-next";
-import type { IncrementalCache, Queue, TagCache } from "@opennextjs/aws/types/overrides";
+import type { IncrementalCache, Queue, TagCache, Wrapper } from "@opennextjs/aws/types/overrides";
 
 export type Override<T extends BaseOverride> = "dummy" | T | LazyLoadedOverride<T>;
 
@@ -23,6 +28,11 @@ export type AzionOverrides = {
    * Sets the revalidation queue implementation
    */
   queue?: "direct" | Override<Queue>;
+
+  /**
+   * Sets the wrapper implementation.
+   */
+  wrapper?: Override<Wrapper>;
 };
 
 /**
@@ -32,12 +42,12 @@ export type AzionOverrides = {
  * @returns the OpenNext configuration object
  */
 export function defineAzionConfig(config: AzionOverrides = {}): OpenNextConfig {
-  const { incrementalCache, tagCache, queue } = config;
+  const { incrementalCache, tagCache, queue, wrapper } = config;
 
   return {
     default: {
       override: {
-        wrapper: "cloudflare-node", // TODO: add support for Azion
+        wrapper: resolveWrapper(wrapper),
         converter: "edge",
         proxyExternalRequest: "fetch",
         incrementalCache: resolveIncrementalCache(incrementalCache),
@@ -45,8 +55,8 @@ export function defineAzionConfig(config: AzionOverrides = {}): OpenNextConfig {
         queue: resolveQueue(queue),
       },
     },
-    // node:crypto is used to compute cache keys
-    edgeExternals: ["node:crypto"],
+    // node:crypto is used to compute cache keys and node:stream is used to wrapper
+    edgeExternals: ["node:crypto", "node:stream"],
   };
 }
 
@@ -67,6 +77,14 @@ function resolveTagCache(value: AzionOverrides["tagCache"] = "dummy") {
 }
 
 function resolveQueue(value: AzionOverrides["queue"] = "dummy") {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  return typeof value === "function" ? value : () => value;
+}
+
+function resolveWrapper(value: AzionOverrides["wrapper"] = "dummy") {
   if (typeof value === "string") {
     return value;
   }

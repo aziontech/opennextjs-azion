@@ -2,6 +2,11 @@
 
 Deploy Next.js apps to Azion!
 
+<!-- TODO: this will be available when the package is integrated into the openenextjs organization -->
+
+> **Warning**  
+> This will be available when the package is integrated into the openenextjs organization .
+
 [OpenNext for Azion](https://opennext.js.org/azion) is a Azion specific adapter that enables deployment of Next.js applications to Azion.
 
 ## Get started
@@ -28,14 +33,14 @@ Run the following commands to preview the production build of your application l
   bun opennextjs-azion build
   ```
 
-- Preview the app in Wrangler
+- Preview the app in Azion
 
   ```bash
-  npx edge-functions dev
+  npx opennextjs-azion preview
   # or
-  pnpm edge-functions dev
+  pnpm opennextjs-azion preview
   # or
-  yarn edge-functions dev
+  yarn opennextjs-azion preview
   ```
 
 ## Deploy your app

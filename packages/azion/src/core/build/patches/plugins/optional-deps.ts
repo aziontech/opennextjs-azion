@@ -1,4 +1,8 @@
 /**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
+/**
  * ESBuild plugin to handle optional dependencies.
  *
  * Optional dependencies might be installed by the application to support optional features.

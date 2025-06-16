@@ -1,3 +1,7 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,8 +13,8 @@ import { build } from "esbuild";
  */
 export async function compileInit(options: BuildOptions) {
   const currentDir = path.join(path.dirname(fileURLToPath(import.meta.url)));
-  const runtimeDir = path.join(currentDir, "../../runtime");
-  const initPath = path.join(runtimeDir, "init.js");
+  const Dir = path.join(currentDir, "../../runtime");
+  const initPath = path.join(Dir, "init.js");
 
   await build({
     entryPoints: [initPath],

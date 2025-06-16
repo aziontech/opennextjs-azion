@@ -1,3 +1,7 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 import type { ContentUpdater, Plugin } from "@opennextjs/aws/plugins/content-updater.js";
 
 export function fixRequire(updater: ContentUpdater): Plugin {

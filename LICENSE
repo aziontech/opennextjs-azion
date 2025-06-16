@@ -1,3 +1,8 @@
+This project includes portions of code based on the @opennextjs/cloudflare repository, licensed under the MIT License:
+
+Copyright (c) 2020 Cloudflare, Inc.
+https://github.com/opennextjs/opennextjs-cloudflare/blob/main/LICENSE
+
 Copyright (c) 2025 Azion.
 
 Permission is hereby granted, free of charge, to any

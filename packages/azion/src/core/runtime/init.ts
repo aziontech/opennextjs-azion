@@ -1,4 +1,8 @@
 /**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
+/**
  * Initialization for the workerd runtime.
  *
  * The file must be imported at the top level the worker.
@@ -11,6 +15,7 @@ import stream from "node:stream";
 // @ts-expect-error: resolved by wrangler build
 import * as nextEnvVars from "./next-env.mjs";
 
+globalThis.AsyncLocalStorage = AsyncLocalStorage;
 const azionContextALS = new AsyncLocalStorage();
 
 // Note: this symbol needs to be kept in sync with `src/api/get-azion-context.ts`
@@ -40,6 +45,7 @@ let initialized = false;
  * Initializes the runtime on the first call,
  * no-op on subsequent invocations.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function init(_request: Request, _env: AzionEnv) {
   if (initialized) {
     return;
@@ -49,6 +55,7 @@ export function init(_request: Request, _env: AzionEnv) {
   // const url = new URL(request.url);
 
   initRuntime();
+  // TODO: CELLS not supported process set
   // populateProcessEnv(url, env);
 }
 

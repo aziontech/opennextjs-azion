@@ -1,6 +1,8 @@
+/**
+ * This code was originally copied and modified from the @opennextjs/cloudflare repository.
+ * Significant changes have been made to adapt it for use with Azion.
+ */
 // Copy-Edit of @opennextjs/aws packages/open-next/src/build/createServerBundle.ts
-// Adapted for azion workers
-
 import fs from "node:fs";
 import path from "node:path";
 
@@ -13,11 +15,7 @@ import * as buildHelper from "@opennextjs/aws/build/helper.js";
 import { installDependencies } from "@opennextjs/aws/build/installDeps.js";
 import type { CodePatcher } from "@opennextjs/aws/build/patch/codePatcher.js";
 import { applyCodePatches } from "@opennextjs/aws/build/patch/codePatcher.js";
-import {
-  patchFetchCacheForISR,
-  patchFetchCacheSetMissingWaitUntil,
-  patchUnstableCacheForISR,
-} from "@opennextjs/aws/build/patch/patches/index.js";
+import { patchBackgroundRevalidation } from "@opennextjs/aws/build/patch/patches/patchBackgroundRevalidation.js";
 import logger from "@opennextjs/aws/logger.js";
 import { minifyAll } from "@opennextjs/aws/minimize-js.js";
 import type { ContentUpdater } from "@opennextjs/aws/plugins/content-updater.js";
@@ -29,6 +27,8 @@ import type { FunctionOptions, SplittedFunctionOptions } from "@opennextjs/aws/t
 import { getCrossPlatformPathRegex } from "@opennextjs/aws/utils/regex.js";
 import type { Plugin } from "esbuild";
 
+import { patchFetchCacheSetMissingWaitUntil } from "../patches/plugins/patch-fetch-cacheset-missing-waituntil.js";
+import { patchFetchCacheForISR, patchUnstableCacheForISR } from "../patches/plugins/path-fetch-cache-isr.js";
 import { patchResRevalidate } from "../patches/plugins/res-revalidate.js";
 import { normalizePath } from "../utils/index.js";
 
@@ -187,11 +187,13 @@ async function generateBundle(
   const additionalCodePatches = codeCustomization?.additionalCodePatches ?? [];
 
   await applyCodePatches(options, tracedFiles, manifests, [
+    // Azion specific patches
     patchFetchCacheSetMissingWaitUntil,
     patchFetchCacheForISR,
     patchUnstableCacheForISR,
-    // Cloudflare specific patches
     patchResRevalidate,
+    // OpenNext specific patches
+    patchBackgroundRevalidation,
     ...additionalCodePatches,
   ]);
 
@@ -208,7 +210,9 @@ async function generateBundle(
 
   const isBefore13413 = buildHelper.compareSemver(options.nextVersion, "<=", "13.4.13");
   const isAfter141 = buildHelper.compareSemver(options.nextVersion, ">=", "14.1");
-  const isAfter142 = buildHelper.compareSemver(options.nextVersion, ">=", "14.2");
+  // const isAfter142 = buildHelper.compareSemver(options.nextVersion, ">=", "14.2");
+  const isAfter1350 = buildHelper.compareSemver(options.nextVersion, ">=", "13.5.0");
+  // console.log(`isAfter1350: ${isAfter1350}`);
 
   const disableRouting = isBefore13413 || config.middleware?.external;
 
@@ -219,7 +223,7 @@ async function generateBundle(
       deletes: [
         ...(disableNextPrebundledReact ? ["applyNextjsPrebundledReact"] : []),
         ...(disableRouting ? ["withRouting"] : []),
-        ...(isAfter142 ? ["patchAsyncStorage"] : []),
+        ...(isAfter1350 ? ["patchAsyncStorage"] : []),
       ],
     }),
     openNextReplacementPlugin({
@@ -257,7 +261,10 @@ async function generateBundle(
       banner: {
         js: [
           `globalThis.monorepoPackagePath = "${normalizePath(packagePath)}";`,
-          name === "default" ? "" : `globalThis.fnName = "${name}";`,
+          name === "default"
+            ? ""
+            : `globalThis.fnName = "${name}";
+         `,
         ].join(""),
       },
       plugins,
