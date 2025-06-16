@@ -21,7 +21,7 @@ jobs:
         uses: ./.github/actions/install-dependencies
 
       - name: Build
-        run: pnpm -F azion run build
+        run: pnpm -F @aziontech/opennextjs-azion run build
 
-      - name: Publish to NPM
+      - name: Publish to pkg-pr-new
         run: pnpm exec pkg-pr-new publish --pnpm --compact './packages/azion'
