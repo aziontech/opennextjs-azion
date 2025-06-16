@@ -1,7 +1,8 @@
+import { writeFileSync } from "node:fs";
+import path from "node:path";
+
 import { BuildOptions } from "@opennextjs/aws/build/helper";
 import { TagCacheMetaFile } from "@opennextjs/aws/types/cache";
-import { writeFileSync } from "fs";
-import path from "path";
 
 export const compileTagAssets = async (
   metaFiles: TagCacheMetaFile[],

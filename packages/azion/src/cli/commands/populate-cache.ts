@@ -15,6 +15,7 @@ import type {
 } from "@opennextjs/aws/types/open-next.js";
 import type { IncrementalCache, TagCache } from "@opennextjs/aws/types/overrides.js";
 import { globSync } from "glob";
+
 import {
   CACHE_DIR as STATIC_ASSETS_CACHE_DIR,
   NAME as STATIC_ASSETS_CACHE_NAME,

@@ -12,13 +12,13 @@ import { printHeader } from "@opennextjs/aws/build/utils.js";
 import logger from "@opennextjs/aws/logger.js";
 import { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 
-import type { ProjectOptions } from "../../core/project-options.js";
+import { compileTagAssets } from "../../api/compile-tag-assets.js";
 import { bundleServer } from "../../core/build/bundle-server.js";
 import { compileEnvFiles } from "../../core/build/open-next/compile-env-files.js";
 import { compileInit } from "../../core/build/open-next/compile-init.js";
 import { createServerBundle } from "../../core/build/open-next/createServerBundle.js";
 import { getVersion } from "../../core/build/utils/version.js";
-import { compileTagAssets } from "../../api/compile-tag-assets.js";
+import type { ProjectOptions } from "../../core/project-options.js";
 
 /**
  * Builds the application in a format that can be passed to workerd
@@ -44,7 +44,7 @@ export async function build(
   buildHelper.printNextjsVersion(options);
   ensureNextjsVersionSupported(options);
   const { aws, azion } = getVersion();
-  logger.info(`@opennextjs/azion version: ${azion}`);
+  logger.info(`@aziontech/opennextjs-azion version: ${azion}`);
   logger.info(`@opennextjs/aws version: ${aws}`);
 
   if (projectOpts.skipNextBuild) {

@@ -27,7 +27,7 @@ describe("webpack runtime", () => {
 
       expect(patchCode(code, buildMultipleChunksRule([1, 2, 3]))).toMatchInlineSnapshot(`
         "/******/ 		// require() chunk loading for javascript
-                  /******/ 		__webpack_require__.f.require = (chunkId, _) => {
+                  /******/ 		__webpack_require__.f.require = (chunkId, promises) => {
           if (!installedChunks[chunkId]) {
             switch (chunkId) {
                case 1: installChunk(require("./chunks/1.js")); break;
@@ -50,7 +50,7 @@ describe("webpack runtime", () => {
 
       expect(patchCode(code, buildMultipleChunksRule([1, 2, 3]))).toMatchInlineSnapshot(
         `
-        "t.f.require=(o, _) => {
+        "t.f.require=(o, promises) => {
           if (!e[o]) {
             switch (o) {
                case 1: r(require("./chunks/1.js")); break;

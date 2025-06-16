@@ -2,9 +2,10 @@
  * This code was originally copied and modified from the @opennextjs/cloudflare repository.
  * Significant changes have been made to adapt it for use with Azion.
  */
+import { cpSync, existsSync, rmSync } from "node:fs";
+import path from "node:path";
+
 import logger from "@opennextjs/aws/logger.js";
-import { cpSync, existsSync, rmSync } from "fs";
-import path from "path";
 
 export function copyAssets(target: string, destination: string) {
   logger.info("\nPopulating assets...");

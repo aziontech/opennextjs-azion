@@ -1,8 +1,8 @@
 import { cpSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { getPackageRuntimeDirPath } from "../../utils/get-package-runtime-dir-path.js";
 import { askConfirmation } from "../../utils/ask-confirmation.js";
+import { getPackageRuntimeDirPath } from "../../utils/get-package-runtime-dir-path.js";
 
 /**
  * Creates a `open-next.config.ts` file for the user if it doesn't exist, but only after asking for the user's confirmation.

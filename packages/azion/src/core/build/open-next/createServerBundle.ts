@@ -16,7 +16,6 @@ import { installDependencies } from "@opennextjs/aws/build/installDeps.js";
 import type { CodePatcher } from "@opennextjs/aws/build/patch/codePatcher.js";
 import { applyCodePatches } from "@opennextjs/aws/build/patch/codePatcher.js";
 import { patchBackgroundRevalidation } from "@opennextjs/aws/build/patch/patches/patchBackgroundRevalidation.js";
-
 import logger from "@opennextjs/aws/logger.js";
 import { minifyAll } from "@opennextjs/aws/minimize-js.js";
 import type { ContentUpdater } from "@opennextjs/aws/plugins/content-updater.js";
@@ -28,10 +27,10 @@ import type { FunctionOptions, SplittedFunctionOptions } from "@opennextjs/aws/t
 import { getCrossPlatformPathRegex } from "@opennextjs/aws/utils/regex.js";
 import type { Plugin } from "esbuild";
 
+import { patchFetchCacheSetMissingWaitUntil } from "../patches/plugins/patch-fetch-cacheset-missing-waituntil.js";
+import { patchFetchCacheForISR, patchUnstableCacheForISR } from "../patches/plugins/path-fetch-cache-isr.js";
 import { patchResRevalidate } from "../patches/plugins/res-revalidate.js";
 import { normalizePath } from "../utils/index.js";
-import { patchFetchCacheForISR, patchUnstableCacheForISR } from "../patches/plugins/path-fetch-cache-isr.js";
-import { patchFetchCacheSetMissingWaitUntil } from "../patches/plugins/patch-fetch-cacheset-missing-waituntil.js";
 
 interface CodeCustomization {
   // These patches are meant to apply on user and next generated code

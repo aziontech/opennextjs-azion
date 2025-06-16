@@ -162,11 +162,11 @@ To help maintain consistency in the changelog, changesets should have the follow
 
 The generated changeset file will contain the package name and type of change (eg. `patch`, `minor`, or `major`), followed by our changeset format described above.
 
-Here's an example of a `patch` to the `@opennextjs/azion` package, which provides a `fix`:
+Here's an example of a `patch` to the `@aziontech/opennextjs-azion` package, which provides a `fix`:
 
 ```md
 ---
-"@opennextjs/azion": patch
+"@aziontech/opennextjs-azion": patch
 ---
 
 fix: replace the word "publish" with "deploy" everywhere.

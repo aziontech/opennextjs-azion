@@ -64,7 +64,7 @@ rule:
                       has:
                         kind: identifier
 
-fix: await (await import("@opennextjs/azion")).getAzionContext().env.WORKER_SELF_REFERENCE.fetch(\`\${$REQ.headers.host.includes("localhost") ? "http":"https" }://\${$REQ.headers.host}$URL_PATH\`,{method:'HEAD', headers:$HEADERS})
+fix: await (await import("@aziontech/opennextjs-azion")).getAzionContext().env.WORKER_SELF_REFERENCE.fetch(\`\${$REQ.headers.host.includes("localhost") ? "http":"https" }://\${$REQ.headers.host}$URL_PATH\`,{method:'HEAD', headers:$HEADERS})
 `;
 export const patchResRevalidate: CodePatcher = {
   name: "patch-res-revalidate",

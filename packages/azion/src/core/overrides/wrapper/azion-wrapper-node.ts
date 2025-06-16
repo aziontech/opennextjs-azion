@@ -3,10 +3,10 @@
  * Significant changes have been made to adapt it for use with Azion.
  */
 
+import { Writable } from "node:stream";
+
 import type { InternalEvent, InternalResult, StreamCreator } from "@opennextjs/aws/types/open-next";
 import type { Wrapper, WrapperHandler } from "@opennextjs/aws/types/overrides";
-
-import { Writable } from "node:stream";
 
 // Response with null body status (101, 204, 205, or 304) cannot have a body.
 const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
@@ -14,6 +14,7 @@ const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
 // TODO: in the future move to the open-next aws package
 const handler: WrapperHandler<InternalEvent, InternalResult> =
   async (handler, converter) =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async (request: Request, env: Record<string, string>, ctx: any): Promise<Response> => {
     globalThis.process = process;
 

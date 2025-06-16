@@ -2,14 +2,15 @@
  * This code was originally copied and modified from the @opennextjs/cloudflare repository.
  * Significant changes have been made to adapt it for use with Azion.
  */
-import fs from "fs/promises";
+import fs from "node:fs/promises";
+import path from "node:path";
+
 import { BuildOptions } from "@opennextjs/aws/build/helper.js";
 import { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 
-import { runBundler } from "../../core/utils/run-bundler.js";
-import path from "path";
-import { populateCache } from "./populate-cache.js";
 import { copyAssets } from "../../core/utils/copy-assets.js";
+import { runBundler } from "../../core/utils/run-bundler.js";
+import { populateCache } from "./populate-cache.js";
 
 export async function preview(
   options: BuildOptions,

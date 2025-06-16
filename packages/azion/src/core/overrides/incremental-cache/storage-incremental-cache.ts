@@ -11,9 +11,9 @@ import type {
 } from "@opennextjs/aws/types/overrides.js";
 import { IgnorableError, RecoverableError } from "@opennextjs/aws/utils/error.js";
 
-import { debugCache, FALLBACK_BUILD_ID } from "../internal.js";
 import { getAzionContext } from "../../../api/azion-context.js";
 import CacheApi from "../../../api/cache-api/index.js";
+import { debugCache, FALLBACK_BUILD_ID } from "../internal.js";
 
 //  Assets inside `data-cache/...` are only accessible by the worker.
 export const CACHE_DIR = "data-cache/_next_cache";
@@ -63,6 +63,7 @@ class StorageIncrementalCache implements IncrementalCache {
     try {
       debugCache(`StorageIncrementalCache - Set ${key}`, cacheType);
       await this.setCacheApiOrStorage(key, value, cacheType ?? "cache");
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       throw new RecoverableError(`Failed to set cache [${key}]`);
     }

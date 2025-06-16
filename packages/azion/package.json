@@ -1,5 +1,5 @@
 {
-  "name": "opennextjs-azion",
+  "name": "@aziontech/opennextjs-azion",
   "description": "Azion builder for next apps",
   "version": "0.0.0",
   "type": "module",

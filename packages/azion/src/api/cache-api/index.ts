@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { debugCache } from "../../core/overrides/internal.js";
 
 class CacheApi {

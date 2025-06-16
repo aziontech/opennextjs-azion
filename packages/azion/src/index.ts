@@ -10,12 +10,13 @@ import { compileOpenNextConfig } from "@opennextjs/aws/build/compileConfig.js";
 import { normalizeOptions } from "@opennextjs/aws/build/helper.js";
 import { printHeader, showWarningOnWindows } from "@opennextjs/aws/build/utils.js";
 import logger from "@opennextjs/aws/logger.js";
+
 import { Arguments, getArgs } from "./cli/args.js";
 import { build } from "./cli/commands/build.js";
-import { createOpenNextConfigIfNotExistent, ensureAzionConfig } from "./core/build/utils/index.js";
 import { deploy } from "./cli/commands/deploy.js";
 import { populateCache } from "./cli/commands/populate-cache.js";
 import { preview } from "./cli/commands/preview.js";
+import { createOpenNextConfigIfNotExistent, ensureAzionConfig } from "./core/build/utils/index.js";
 
 const nextAppDir = process.cwd();
 

@@ -45,6 +45,7 @@ let initialized = false;
  * Initializes the runtime on the first call,
  * no-op on subsequent invocations.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function init(_request: Request, _env: AzionEnv) {
   if (initialized) {
     return;

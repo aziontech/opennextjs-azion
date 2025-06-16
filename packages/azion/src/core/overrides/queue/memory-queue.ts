@@ -7,8 +7,8 @@ import { error } from "@opennextjs/aws/adapters/logger.js";
 import type { Queue, QueueMessage } from "@opennextjs/aws/types/overrides.js";
 import { IgnorableError } from "@opennextjs/aws/utils/error.js";
 
-import { debugCache } from "../internal";
 import { getAzionContext } from "../../../api";
+import { debugCache } from "../internal";
 
 export const DEFAULT_REVALIDATION_TIMEOUT_MS = 10_000;
 

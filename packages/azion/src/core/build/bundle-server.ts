@@ -15,6 +15,7 @@ import { patchVercelOgLibrary } from "./patches/ast/patch-vercel-og-library.js";
 import { patchWebpackRuntime } from "./patches/ast/webpack-runtime.js";
 import * as patches from "./patches/index.js";
 import { inlineBuildId } from "./patches/plugins/build-id.js";
+import { inlineDynamicRequireLoadComponents } from "./patches/plugins/dynamic-require-load-components.js";
 import { inlineDynamicRequires } from "./patches/plugins/dynamic-requires.js";
 import { inlineEvalManifest } from "./patches/plugins/eval-manifest.js";
 import { inlineFindDir } from "./patches/plugins/find-dir.js";
@@ -22,17 +23,16 @@ import { patchInstrumentation } from "./patches/plugins/instrumentation.js";
 import { inlineLoadManifest } from "./patches/plugins/load-manifest.js";
 import { patchNextMinimal } from "./patches/plugins/next-minimal.js";
 import { handleOptionalDependencies } from "./patches/plugins/optional-deps.js";
+import { patchPagesRouterContext } from "./patches/plugins/pages-router-context.js";
 import { patchDepdDeprecations } from "./patches/plugins/patch-depd-deprecations.js";
-import { fixRequire } from "./patches/plugins/require.js";
-import { shimRequireHook } from "./patches/plugins/require-hook.js";
-import { needsExperimentalReact, normalizePath, patchCodeWithValidations } from "./utils/index.js";
-import { inlineDynamicRequireLoadComponents } from "./patches/plugins/dynamic-require-load-components.js";
-import { inlinePatchRewriteRouter } from "./patches/plugins/patch-rewrite-router.js";
 import {
   inlinePatchRewriteInvokeHeaders,
   inlinePatchRewriteURLSource,
 } from "./patches/plugins/patch-rewrite-invoke-headers.js";
-import { patchPagesRouterContext } from "./patches/plugins/pages-router-context.js";
+import { inlinePatchRewriteRouter } from "./patches/plugins/patch-rewrite-router.js";
+import { fixRequire } from "./patches/plugins/require.js";
+import { shimRequireHook } from "./patches/plugins/require-hook.js";
+import { needsExperimentalReact, normalizePath, patchCodeWithValidations } from "./utils/index.js";
 
 /** The dist directory of the Azion package */
 const packageDistDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../");

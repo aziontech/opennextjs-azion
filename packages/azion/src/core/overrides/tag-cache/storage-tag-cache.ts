@@ -4,10 +4,11 @@
  */
 
 import type { TagCache } from "@opennextjs/aws/types/overrides";
-import { getAzionContext } from "../../../api";
 import { IgnorableError } from "@opennextjs/aws/utils/error.js";
-import { debugCache, FALLBACK_BUILD_ID } from "../internal.js";
+
+import { getAzionContext } from "../../../api";
 import CacheApi from "../../../api/cache-api";
+import { debugCache, FALLBACK_BUILD_ID } from "../internal.js";
 
 const CACHE_DIR = "data-cache/_next_cache";
 const CACHE_TAGS_MANIFEST = `cache-tags-manifest.cache`;
