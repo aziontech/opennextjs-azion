@@ -24,6 +24,10 @@ export type Arguments = (
       assetsDir: string;
       cacheDir: string;
     }
+  | {
+      command: "populateAssets";
+      assetsDir: string;
+    }
 ) & { outputDir?: string };
 
 // TODO: review this when azion.config.js contains this information
@@ -80,8 +84,17 @@ export function getArgs(): Arguments {
         cacheDir: CACHE_DIR,
       };
 
+    case "populateAssets":
+      return {
+        command: "populateAssets",
+        outputDir,
+        assetsDir: ASSETS_DIR,
+      };
+
     default:
-      throw new Error("Error: invalid command, expected 'build' | 'preview' | 'deploy' | 'populateCache'");
+      throw new Error(
+        "Error: invalid command, expected 'build' | 'preview' | 'deploy' | 'populateCache' | 'populateAssets'"
+      );
   }
 }
 
