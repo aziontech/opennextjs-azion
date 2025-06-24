@@ -16,7 +16,7 @@ declare global {
     // Asset binding
     ASSETS?: {
       // get an asset from the Azion Storage
-      fetch: (request: Request) => Promise<Response>;
+      fetch: (request: Request | URL) => Promise<Response>;
     };
 
     // Environment to use when loading Next `.env` files

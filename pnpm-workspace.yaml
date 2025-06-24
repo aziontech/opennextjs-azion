@@ -28,7 +28,7 @@ catalog:
   typescript-eslint: ^8.7.0
   typescript: ^5.7.3
   vitest: ^2.1.1
-  edge-functions: "5.2.0-stage.5" # TODO: change to ^5.2.0 when released
+  edge-functions: "5.2.0-stage.12" # TODO: change to ^5.2.0 when released
 
 # e2e tests
 catalogs:
