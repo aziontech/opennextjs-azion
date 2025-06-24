@@ -80,5 +80,8 @@
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
     "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "edge-functions": "catalog:"
   }
 }

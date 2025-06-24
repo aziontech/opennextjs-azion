@@ -9,5 +9,6 @@ export function getVersion() {
   return {
     azion: pkgJson.version,
     aws: pkgJson.dependencies["@opennextjs/aws"],
+    bundler: pkgJson.dependencies["edge-functions"],
   };
 }
