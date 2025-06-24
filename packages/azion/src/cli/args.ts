@@ -6,6 +6,8 @@ import { mkdirSync, type Stats, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
+import { getVersion } from "../core/build/utils/version.js";
+
 export type Arguments = (
   | {
       command: "build";
@@ -34,13 +36,15 @@ export type Arguments = (
 const ASSETS_DIR = ".edge/storage";
 const CACHE_DIR = ".edge/storage";
 
+const DEFAULT_BUNDLER_VERSION = getVersion().bundler;
+
 export function getArgs(): Arguments {
   const { positionals, values } = parseArgs({
     options: {
       skipBuild: { type: "boolean", short: "s", default: false },
       output: { type: "string", short: "o" },
       noMinify: { type: "boolean", default: false },
-      bundlerVersion: { type: "string", default: "5.2.0-stage.5" },
+      bundlerVersion: { type: "string", default: DEFAULT_BUNDLER_VERSION },
     },
     allowPositionals: true,
   });

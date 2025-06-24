@@ -117,7 +117,7 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       // Apply updater updates, must be the last plugin
       updater.plugin,
     ] as Plugin[],
-    external: ["./middleware/handler.mjs", "*.wasm"],
+    external: ["./middleware/handler.mjs"],
     alias: {
       // Note: it looks like node-fetch is actually not necessary for us, so we could replace it with an empty shim
       //       but just to be safe we replace it with a module that re-exports the native fetch
@@ -165,6 +165,10 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       js: `import {setInterval, clearInterval, setTimeout, clearTimeout, setImmediate, clearImmediate} from "node:timers"`,
     },
     platform: "node",
+    loader: {
+      ".wasm": "file",
+      ".bin": "file",
+    },
   });
 
   fs.writeFileSync(openNextServerBundle + ".meta.json", JSON.stringify(result.metafile, null, 2));

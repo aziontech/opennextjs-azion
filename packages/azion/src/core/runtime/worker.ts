@@ -12,14 +12,9 @@ const bucketName = (globalThis as any).AZION_BUCKET_NAME ?? "";
 const InstanceStorage = new (globalThis as any).Azion.Storage(bucketName);
 
 export default {
-  // TODO: change to event to request when available on Azion Bundler
-  async fetch(event: any, env: AzionEnv, ctx: ExecutionContext) {
-    // TODO: load the env and ctx from the global scope
-    // remove this when bindings are available
+  async fetch(request: Request, env: AzionEnv, ctx: ExecutionContext) {
     ctx = {
-      waitUntil: event.waitUntil.bind(event),
-      passThroughOnException: event.passThroughOnException,
-      request: event.request,
+      ...ctx,
       props: {},
     };
     env = {
@@ -45,13 +40,13 @@ export default {
         },
       },
     };
-    return runWithAzionRequestContext(event.request, env, ctx, async () => {
-      return requestHandler(event.request, env, ctx);
+    return runWithAzionRequestContext(request, env, ctx, async () => {
+      return requestHandler(request, env, ctx);
     });
   },
 };
 
-const requestHandler = async (request: Request, env: any, ctx: any) => {
+const requestHandler = async (request: Request, env: AzionEnv, ctx: ExecutionContext) => {
   const url = new URL(request.url);
   // This is a workaround for rewrite next.config
   // Issue: https://github.com/opennextjs/opennextjs-aws/issues/848
@@ -85,17 +80,16 @@ const requestHandler = async (request: Request, env: any, ctx: any) => {
     }
     return env.ASSETS?.fetch(request);
   }
-  // @ts-expect-error: resolved by wrangler build
+  // @ts-expect-error: resolved by bundler build
   const { handler } = await import("./server-functions/default/handler.mjs");
 
-  return handler(request, env, {
-    waitUntil: ctx.waitUntil.bind(ctx),
-  });
+  return handler(request, env, ctx);
 };
 
-const getStorageAsset = async (request: Request) => {
+const getStorageAsset = async (request: Request | URL) => {
   try {
-    const requestPath = decodeURIComponent(new URL(request.url).pathname);
+    const urlString = request instanceof Request ? request.url : request.toString();
+    const requestPath = decodeURIComponent(new URL(urlString).pathname);
     const assetUrl = new URL(requestPath === "/" ? "index.html" : requestPath, "file://");
     return fetch(assetUrl);
   } catch (e) {
