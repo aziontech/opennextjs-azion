@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 0.0.3
+
+### Patch Changes
+
+- [`2ed9680`](https://github.com/aziontech/opennextjs-azion/commit/2ed9680a4c27ec01e57bc70441d5c4524f16305e) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - improvements and the addition of a new example
+
 ## 0.0.2
 
 ### Patch Changes
