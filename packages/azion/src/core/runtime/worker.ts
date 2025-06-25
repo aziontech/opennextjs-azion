@@ -29,10 +29,6 @@ export default {
       WORKER_SELF_REFERENCE: {
         fetch: async (url: string, options: RequestInit) => {
           const requestRef = new Request(url, options);
-          ctx = {
-            ...ctx,
-            request: requestRef,
-          };
           return requestHandler(requestRef, env, ctx);
         },
       },
