@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 0.0.4
+
+### Patch Changes
+
+- [`bb6195d`](https://github.com/aziontech/opennextjs-azion/commit/bb6195d2bd504c1b3f954cfb5537c01bc181bcd8) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - fix: remove context modification in worker self-reference
+
 ## 0.0.3
 
 ### Patch Changes
