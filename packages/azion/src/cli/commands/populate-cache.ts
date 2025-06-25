@@ -78,7 +78,7 @@ export function getCacheAssets(opts: BuildOptions): CacheAsset[] {
 }
 
 function populateStaticAssetsIncrementalCache(options: BuildOptions, cacheDir: string) {
-  logger.info("\nPopulating cache...");
+  logger.info("Populating cache...");
   const storageCacheDir = path.join(cacheDir, STATIC_ASSETS_CACHE_DIR);
   if (existsSync(storageCacheDir)) {
     rmSync(storageCacheDir, { recursive: true, force: true });

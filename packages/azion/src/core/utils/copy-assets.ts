@@ -8,7 +8,7 @@ import path from "node:path";
 import logger from "@opennextjs/aws/logger.js";
 
 export function copyAssets(target: string, destination: string) {
-  logger.info("\nPopulating assets...");
+  logger.info("Populating assets...");
   const targetDir = path.join(target);
   if (existsSync(destination)) {
     rmSync(destination, { recursive: true, force: true });

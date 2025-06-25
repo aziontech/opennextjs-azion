@@ -3,17 +3,19 @@
  * Significant changes have been made to adapt it for use with Azion.
  */
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import path from "node:path";
 
 import type { BuildOptions } from "@opennextjs/aws/build/helper.js";
 import { compareSemver } from "@opennextjs/aws/build/helper.js";
 import logger from "@opennextjs/aws/logger.js";
+import prettier from "prettier";
 
 type BundlerOptions = {
   port?: number;
   debug?: boolean;
-  logging?: "error" | "all";
+  logging?: "error" | "all" | "pipe";
   version?: string;
 };
 
@@ -25,7 +27,7 @@ type BundlerOptions = {
  */
 function isYarnModern(options: BuildOptions) {
   const packageJson: { packageManager?: string } = JSON.parse(
-    readFileSync(path.join(options.monorepoRoot, "package.json"), "utf-8")
+    fs.readFileSync(path.join(options.monorepoRoot, "package.json"), "utf-8")
   );
 
   if (!packageJson.packageManager?.startsWith("yarn")) return false;
@@ -62,12 +64,11 @@ function injectPassthroughFlagForArgs(options: BuildOptions, args: string[]) {
 }
 
 export function runBundler(options: BuildOptions, args: string[], bundlerOpts: BundlerOptions = {}) {
-  const yarnAndYarnClassic = options.packager === "yarn" && !isYarnModern(options);
+  const bundlerVersion = `edge-functions@${bundlerOpts.version}`;
   const result = spawnSync(
-    yarnAndYarnClassic ? "npx" : options.packager,
+    "npx",
     [
-      yarnAndYarnClassic ? "" : options.packager === "bun" ? "x" : "exec",
-      `edge-functions@${bundlerOpts.version ?? "latest"}`,
+      bundlerVersion,
       ...injectPassthroughFlagForArgs(
         options,
         [...args].filter((v): v is string => !!v)
@@ -75,7 +76,12 @@ export function runBundler(options: BuildOptions, args: string[], bundlerOpts: B
     ],
     {
       shell: true,
-      stdio: bundlerOpts.logging === "error" ? ["ignore", "ignore", "inherit"] : "inherit",
+      stdio:
+        bundlerOpts.logging === "error"
+          ? ["ignore", "ignore", "inherit"]
+          : bundlerOpts.logging === "pipe"
+            ? "pipe"
+            : "inherit",
       env: {
         ...process.env,
         ...(bundlerOpts.logging === "error" ? { BUNDLER_LOG: "error" } : undefined),
@@ -87,4 +93,114 @@ export function runBundler(options: BuildOptions, args: string[], bundlerOpts: B
     logger.error("Bundler command failed");
     process.exit(1);
   }
+  return bundlerOpts.logging === "pipe"
+    ? {
+        stdout: result.stdout ? result.stdout.toString() : "",
+        stderr: result.stderr ? result.stderr.toString() : "",
+      }
+    : undefined;
 }
+
+// TODO: Remove this when Azion Bundler generate by command generate config
+export const azionConfigExists = async (options: BuildOptions): Promise<boolean> => {
+  const configExtensions = [".cjs", ".js", ".mjs", ".ts"];
+  for (const ext of configExtensions) {
+    const filePath = `${options.monorepoRoot}/azion.config${ext}`;
+    try {
+      await fsPromises.access(filePath);
+      return true; // Config file exists
+    } catch {
+      // File does not exist, continue to the next extension
+    }
+  }
+  return false; // No config file found
+};
+
+// TODO: Remove this when Azion Bundler generate by command generate config
+function isCommonJS(): boolean {
+  const packageJsonPath = path.join(process.cwd(), "package.json");
+
+  if (fs.existsSync(packageJsonPath)) {
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+    return packageJson.type !== "module";
+  }
+
+  return true;
+}
+
+// TODO: Remove this when Azion Bundler generate by command generate config
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createAzionConfig(options: BuildOptions, configAzion: Record<string, any>) {
+  const useCommonJS = isCommonJS();
+  const extension = useCommonJS ? ".cjs" : ".mjs";
+  const configFileName = path.join(options.monorepoRoot, `azion.config${extension}`);
+  const moduleExportStyle = useCommonJS ? "module.exports =" : "export default";
+
+  const configComment = `/**
+ * This file was automatically generated based on your preset configuration.
+ * 
+ * For better type checking and IntelliSense:
+ * 1. Install azion as dev dependency:
+ *    npm install -D azion
+ * 
+ * 2. Use defineConfig:
+ *    import { defineConfig } from 'azion'
+ * 
+ * 3. Replace the configuration with defineConfig:
+ *    export default defineConfig({
+ *      // Your configuration here
+ *    })
+ * 
+ * For more configuration options, visit:
+ * https://github.com/aziontech/lib/tree/main/packages/config
+ */\n\n`;
+
+  const replacer = (_key: string, value: unknown) => {
+    if (typeof value === "function") {
+      return `__FUNCTION_START__${value.toString()}__FUNCTION_END__`;
+    }
+    return value;
+  };
+
+  const formattedContent = await prettier.format(
+    configComment + `${moduleExportStyle} ${JSON.stringify(configAzion, replacer, 2)};`,
+    {
+      parser: "babel",
+      semi: false,
+      singleQuote: true,
+      trailingComma: "none",
+    }
+  );
+
+  await fsPromises
+    .writeFile(path.resolve(options.monorepoRoot, configFileName), formattedContent, "utf-8")
+    .catch((err) => {
+      logger.error("Error writing Azion config file:", err);
+      process.exit(1);
+    });
+}
+
+export const commandBuildBundler = async (
+  options: BuildOptions,
+  skipFrameworkBuild: boolean,
+  passthroughArgs: string[],
+  bundlerOpts: BundlerOptions = {}
+) => {
+  await new Promise((resolve) => {
+    resolve(
+      runBundler(
+        options,
+        [
+          "build",
+          "--preset",
+          "opennextjs",
+          "--entry",
+          path.resolve(options.outputDir, "worker.js"),
+          skipFrameworkBuild ? "--skip-framework-build" : "",
+          ...passthroughArgs,
+        ],
+        bundlerOpts
+      )
+    );
+  });
+};

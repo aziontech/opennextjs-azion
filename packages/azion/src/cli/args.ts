@@ -6,8 +6,6 @@ import { mkdirSync, type Stats, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
-import { getVersion } from "../core/build/utils/version.js";
-
 export type Arguments = (
   | {
       command: "build";
@@ -19,7 +17,8 @@ export type Arguments = (
       passthroughArgs: string[];
       assetsDir: string;
       cacheDir: string;
-      bundlerVersion: string;
+      skipNextBuild: boolean;
+      bundlerVersion?: string;
     }
   | {
       command: "populateCache";
@@ -36,15 +35,13 @@ export type Arguments = (
 const ASSETS_DIR = ".edge/storage";
 const CACHE_DIR = ".edge/storage";
 
-const DEFAULT_BUNDLER_VERSION = getVersion().bundler;
-
 export function getArgs(): Arguments {
   const { positionals, values } = parseArgs({
     options: {
       skipBuild: { type: "boolean", short: "s", default: false },
       output: { type: "string", short: "o" },
       noMinify: { type: "boolean", default: false },
-      bundlerVersion: { type: "string", default: DEFAULT_BUNDLER_VERSION },
+      bundlerVersion: { type: "string", default: "latest" }, // Default to latest version
     },
     allowPositionals: true,
   });
@@ -68,7 +65,9 @@ export function getArgs(): Arguments {
         outputDir,
         assetsDir: ASSETS_DIR,
         cacheDir: CACHE_DIR,
-        bundlerVersion: values.bundlerVersion!,
+        bundlerVersion: values.bundlerVersion,
+        skipNextBuild:
+          values.skipBuild || ["1", "true", "yes"].includes(String(process.env.SKIP_NEXT_APP_BUILD)),
       };
     case "deploy":
       return {
@@ -77,7 +76,9 @@ export function getArgs(): Arguments {
         outputDir,
         assetsDir: ASSETS_DIR,
         cacheDir: CACHE_DIR,
-        bundlerVersion: values.bundlerVersion!,
+        bundlerVersion: values.bundlerVersion,
+        skipNextBuild:
+          values.skipBuild || ["1", "true", "yes"].includes(String(process.env.SKIP_NEXT_APP_BUILD)),
       };
 
     case "populateCache":
