@@ -7,22 +7,19 @@
 //@ts-expect-error: Will be resolved by wrangler build
 import { runWithAzionRequestContext } from "./azion/init.js";
 
-// This is a workaround for the Azion Storage API
-const bucketName = (globalThis as any).AZION_BUCKET_NAME ?? "";
+// Azion Storage API
+const bucketName = (globalThis as any)?.AZION_BUCKET_NAME ?? "";
+const bucketPrefix = (globalThis as any)?.AZION_BUCKET_PREFIX ?? "";
 const InstanceStorage = new (globalThis as any).Azion.Storage(bucketName);
 
 export default {
   async fetch(request: Request, env: AzionEnv, ctx: ExecutionContext) {
-    ctx = {
-      ...ctx,
-      props: {},
-    };
+    // SET env
     env = {
       ...env,
-      // bind the env to the worker
       AZION: {
-        BUCKET_NAME: (globalThis as any).AZION_BUCKET_NAME ?? "",
-        BUCKET_PREFIX: (globalThis as any).AZION_BUCKET_PREFIX ?? "",
+        BUCKET_NAME: bucketName,
+        BUCKET_PREFIX: bucketPrefix,
         CACHE_API_STORAGE_NAME: (globalThis as any).AZION_CACHE_API_STORAGE_NAME ?? "nextjs_cache",
         Storage: InstanceStorage,
       },
@@ -31,12 +28,12 @@ export default {
       },
       WORKER_SELF_REFERENCE: {
         fetch: async (url: string, options: RequestInit) => {
-          const request = new Request(url, options);
+          const requestRef = new Request(url, options);
           ctx = {
             ...ctx,
-            request,
+            request: requestRef,
           };
-          return requestHandler(request, env, ctx);
+          return requestHandler(requestRef, env, ctx);
         },
       },
     };
@@ -48,9 +45,6 @@ export default {
 
 const requestHandler = async (request: Request, env: AzionEnv, ctx: ExecutionContext) => {
   const url = new URL(request.url);
-  // This is a workaround for rewrite next.config
-  // Issue: https://github.com/opennextjs/opennextjs-aws/issues/848
-  request.headers.set("x-original-url", url.pathname);
   // Serve images in development.
   // Note: "/data-cache/image/..." requests do not reach production workers.
   // TODO: make support for this
@@ -73,9 +67,10 @@ const requestHandler = async (request: Request, env: AzionEnv, ctx: ExecutionCon
   if (url.pathname.startsWith("/_next/")) {
     return env.ASSETS?.fetch(request);
   }
+  // This necessary to local server
   const assetRegex = /\.(css|js|ttf|woff|woff2|pdf|svg|jpg|jpeg|gif|bmp|png|ico|mp4|json|xml)$/;
   if (url.pathname.match(assetRegex)) {
-    if (url.pathname.includes("com.chrome.devtools.json")) {
+    if (url.pathname.includes(".devtools.json")) {
       return new Response("ok", { status: 200 });
     }
     return env.ASSETS?.fetch(request);
