@@ -1,4 +1,6 @@
 {
+  "name": "playground-13",
+  "version": "0.0.1",
   "private": true,
   "packageManager": "pnpm@8.2.0",
   "type": "module",
