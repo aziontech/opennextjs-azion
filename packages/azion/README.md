@@ -2,8 +2,6 @@
 
 Deploy Next.js apps to Azion!
 
-<!-- TODO: this will be available when the package is integrated into the openenextjs organization -->
-
 > **Warning**  
 > This will be available when the package is integrated into the openenextjs organization .
 
@@ -29,8 +27,6 @@ Run the following commands to preview the production build of your application l
   pnpm opennextjs-azion build
   # or
   yarn opennextjs-azion build
-  # or
-  bun opennextjs-azion build
   ```
 
 - Preview the app in Azion
@@ -50,9 +46,13 @@ Deploy your application to production with the following:
 - build the app and adapt it for Azion
 
   ```bash
-  npx opennextjs-azion build && npx opennextjs-azion deploy
+  npx opennextjs-azion deploy
   # or
-  pnpm opennextjs-azion build && pnpm opennextjs-azion deploy
+  pnpm opennextjs-azion deploy
   # or
-  yarn opennextjs-azion build && yarn opennextjs-azion deploy
+  yarn opennextjs-azion deploy
   ```
+
+  > **Note**  
+  > The `opennextjs-azion deploy` command will generate a new Next.js build and prepare your application for deployment on Azion.  
+  > To deploy to Azion, you need an Azion account and must use the Azion CLI. See the [Azion CLI Documentation](https://www.azion.com/en/documentation/products/azion-cli/overview/) for more information on how to set up your account and use the CLI.
