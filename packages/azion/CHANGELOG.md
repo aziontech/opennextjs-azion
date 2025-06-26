@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 0.0.5
+
+### Patch Changes
+
+- [#14](https://github.com/aziontech/opennextjs-azion/pull/14) [`8dac56e`](https://github.com/aziontech/opennextjs-azion/commit/8dac56ee3493f84147245c378a67b661a4f6278e) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - chore: add CLA, Code of Conduct, and update documentation for OpenNext integration
+
 ## 0.0.4
 
 ### Patch Changes
