@@ -51,6 +51,17 @@
     "workers",
     "next.js"
   ],
+  "author": "aziontech",
+  "contributors": [
+    {
+      "name": "jcbsfilho",
+      "url": "https://github.com/jcbsfilho"
+    },
+    {
+      "name": "João Narciso",
+      "url": "https://jotanarciso.com"
+    }
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/aziontech/opennextjs-azion/issues"

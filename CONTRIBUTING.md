@@ -36,8 +36,8 @@ Any contributions you make will be via [Pull Requests](https://docs.github.com/e
   > git remote -v
   origin https://github.com/<your-github-username>/opennextjs-azion (fetch)
   origin https://github.com/<your-github-username>/opennextjs-azion (push)
-  upstream https://github.com/opennextjs/opennextjs-azion (fetch)
-  upstream https://github.com/opennextjs/opennextjs-azion (push)
+  upstream https://github.com/aziontech/opennextjs-azion (fetch)
+  upstream https://github.com/aziontech/opennextjs-azion (push)
   ```
 
 - You should regularly pull from the `main` branch of the `upstream` repository to keep up to date with the latest changes to the project.
@@ -45,7 +45,7 @@ Any contributions you make will be via [Pull Requests](https://docs.github.com/e
   ```sh
   > git switch main
   > git pull upstream main
-  From https://github.com/opennextjs/opennextjs-azion
+  From https://github.com/aziontech/opennextjs-azion
   * branch            main       -> FETCH_HEAD
   Already up to date.
   ```
@@ -54,7 +54,7 @@ Any contributions you make will be via [Pull Requests](https://docs.github.com/e
 
 The Node.js dependencies of the project are managed by the [`pnpm`](https://pnpm.io/) tool.
 
-This repository is setup as a [mono-repo](https://pnpm.io/workspaces) of workspaces. The workspaces are stored in the [`packages`](https://github.com/opennextjs/opennextjs-azion/tree/main/packages) directory.
+This repository is setup as a [mono-repo](https://pnpm.io/workspaces) of workspaces. The workspaces are stored in the [`packages`](https://github.com/aziontech/opennextjs-azion/tree/main/packages) directory.
 
 While each workspace has its own dependencies, you install the dependencies using `pnpm` at the root of the project.
 
@@ -77,18 +77,6 @@ or in watch mode with:
 
 ```sh
 pnpm --filter azion build:watch
-```
-
-Build and preview a Next.js sample application. For example, the `api` application:
-
-```sh
-pnpm --filter api preview
-```
-
-You can skip building the Next.js app when it has not been modified, and only run the Azion adaptor tool:
-
-```sh
-SKIP_NEXT_APP_BUILD=true pnpm --filter api preview
 ```
 
 ## Checking the code

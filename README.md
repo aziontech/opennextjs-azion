@@ -1,12 +1,32 @@
 # Deploy Next.js apps to Azion
 
-[OpenNext for Azion](https://opennext.js.org/azion) is an adapter that enables the deployment of Next.js applications to Azion's developer platform.
+[OpenNext](https://opennext.js.org) is an adapter that enables the deployment of Next.js applications to Azion's developer platform.
 
-This monorepo includes a package for adapting a Next.js application built via `next build` (in standalone mode) to run in the Azion workerd runtime using the [LINK TO MATRIX COMPATIBILITY TABLE].
+This monorepo includes a package for adapting a Next.js application built via `next build` (in standalone mode) to run in the Azion runtime.
 
 ## Get started
 
-Visit the [OpenNext docs](https://opennext.js.org/azion/get-started) for instructions on starting a new project, or migrating an existing one.
+To get started with OpenNext for Azion, you need to have an existing Next.js project or create a new Next.js project.
+
+Or see the [playground-13](https://github.com/aziontech/bundler-examples/tree/main/examples/nextjs/node-playground-13) example for a simple Next.js application that uses the OpenNext for Azion package.
+
+To build, run the following command:
+
+```bash
+pnpm add @aziontech/opennextjs-azion
+```
+
+Then, you can build your Next.js application with the following command:
+
+```bash
+pnpm exec opennextjs-azion build
+```
+
+To preview your application, you can run:
+
+```bash
+pnpm exec opennextjs-azion preview
+```
 
 ## Contributing
 
@@ -14,12 +34,9 @@ Visit the [OpenNext docs](https://opennext.js.org/azion/get-started) for instruc
 
 The repository contains two directories:
 
-- `packages` containing a azion package that can be used to build a Azion Workers-compatible output for Next.js applications.
-- `examples` containing Next.js applications that use the above mentioned azion package.
+- `packages` containing a azion package that can be used to build a Azion compatible output for Next.js applications.
 
 ### How to try out the `@aziontech/opennextjs-azion` package
-
-You can simply install the package from npm as specified in the [OpenNext documentation](https://opennext.js.org/azion/get-started).
 
 #### Preleases
 
