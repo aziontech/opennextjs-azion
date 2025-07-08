@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 0.0.6
+
+### Patch Changes
+
+- [#17](https://github.com/aziontech/opennextjs-azion/pull/17) [`0748c9b`](https://github.com/aziontech/opennextjs-azion/commit/0748c9bd327fb956a238770a28f6eb9b9b97fe3a) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - fix: add prettier as a dependency and update pnpm lockfile
+
 ## 0.0.5
 
 ### Patch Changes
