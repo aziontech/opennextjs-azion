@@ -60,6 +60,10 @@
     {
       "name": "João Narciso",
       "url": "https://jotanarciso.com"
+    },
+    {
+      "name": "pablodiehl",
+      "url": "https://github.com/pablodiehl"
     }
   ],
   "license": "MIT",
@@ -72,6 +76,7 @@
     "@opennextjs/aws": "~3.6.0",
     "enquirer": "^2.4.1",
     "glob": "catalog:",
+    "prettier": "3.3.3",
     "ts-tqdm": "^0.8.6"
   },
   "devDependencies": {
