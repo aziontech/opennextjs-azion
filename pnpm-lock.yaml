@@ -98,6 +98,9 @@ importers:
       glob:
         specifier: 'catalog:'
         version: 11.0.0
+      prettier:
+        specifier: 3.3.3
+        version: 3.3.3
       ts-tqdm:
         specifier: ^0.8.6
         version: 0.8.6
