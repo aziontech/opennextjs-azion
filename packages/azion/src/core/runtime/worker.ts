@@ -77,9 +77,10 @@ const requestHandler = async (request: Request, env: any, ctx: any) => {
   if (url.pathname.startsWith("/_next/")) {
     return env.ASSETS?.fetch(request);
   }
-  
+
   // Supported static asset extensions
-  const assetRegex = /\.(css|js|ttf|woff|woff2|otf|eot|svg|jpg|jpeg|gif|bmp|png|ico|webp|avif|heic|heif|tiff|tif|mp4|webm|avi|mov|wmv|flv|m4v|mkv|ogv|mp3|wav|ogg|m4a|aac|flac|opus|pdf|json|xml|zip|rar|tar|gz)$/;
+  const assetRegex =
+    /\.(css|js|ttf|woff|woff2|otf|eot|svg|jpg|jpeg|gif|bmp|png|ico|webp|avif|heic|heif|tiff|tif|mp4|webm|avi|mov|wmv|flv|m4v|mkv|ogv|mp3|wav|ogg|m4a|aac|flac|opus|pdf|json|xml|zip|rar|tar|gz)$/;
   if (url.pathname.match(assetRegex)) {
     if (url.pathname.includes("com.chrome.devtools.json")) {
       return new Response("ok", { status: 200 });
