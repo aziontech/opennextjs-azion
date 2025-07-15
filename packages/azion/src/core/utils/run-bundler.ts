@@ -46,7 +46,7 @@ function isYarnModern(options: BuildOptions) {
  * @param args CLI args.
  * @returns Arguments with a passthrough flag injected when needed.
  */
-function injectPassthroughFlagForArgs(options: BuildOptions, args: string[]) {
+export function injectPassthroughFlagForArgs(options: BuildOptions, args: string[]) {
   if (options.packager === "yarn" && !isYarnModern(options)) {
     return args;
   }
@@ -63,31 +63,22 @@ function injectPassthroughFlagForArgs(options: BuildOptions, args: string[]) {
   return args;
 }
 
-export function runBundler(options: BuildOptions, args: string[], bundlerOpts: BundlerOptions = {}) {
-  const bundlerVersion = `edge-functions@${bundlerOpts.version}`;
-  const result = spawnSync(
-    "npx",
-    [
-      bundlerVersion,
-      ...injectPassthroughFlagForArgs(
-        options,
-        [...args].filter((v): v is string => !!v)
-      ),
-    ],
-    {
-      shell: true,
-      stdio:
-        bundlerOpts.logging === "error"
-          ? ["ignore", "ignore", "inherit"]
-          : bundlerOpts.logging === "pipe"
-            ? "pipe"
-            : "inherit",
-      env: {
-        ...process.env,
-        ...(bundlerOpts.logging === "error" ? { BUNDLER_LOG: "error" } : undefined),
-      },
-    }
-  );
+export function runBundler(_options: BuildOptions, args: string[], bundlerOpts: BundlerOptions = {}) {
+  const packageName = `edge-functions@${bundlerOpts.version}`;
+  const result = spawnSync("npx", [packageName, ...args], {
+    shell: true,
+    stdio:
+      bundlerOpts.logging === "error"
+        ? ["ignore", "ignore", "inherit"]
+        : bundlerOpts.logging === "pipe"
+          ? "pipe"
+          : "inherit",
+    env: {
+      ...process.env,
+      NODE_OPTIONS: "--experimental-vm-modules --no-warnings",
+      ...(bundlerOpts.logging === "error" ? { BUNDLER_LOG: "error" } : undefined),
+    },
+  });
 
   if (result.status !== 0) {
     logger.error("Bundler command failed");
