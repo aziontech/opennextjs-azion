@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 0.0.7
+
+### Patch Changes
+
+- [#23](https://github.com/aziontech/opennextjs-azion/pull/23) [`9d55c81`](https://github.com/aziontech/opennextjs-azion/commit/9d55c81734f68518c9d8c016f52dea6515907848) Thanks [@jotanarciso](https://github.com/jotanarciso)! - expand supported static asset extensions
+
 ## 0.0.6
 
 ### Patch Changes
