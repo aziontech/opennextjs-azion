@@ -64,7 +64,8 @@ const requestHandler = async (request: Request, env: AzionEnv, ctx: ExecutionCon
     return env.ASSETS?.fetch(request);
   }
   // This necessary to local server
-  const assetRegex = /\.(css|js|ttf|woff|woff2|otf|eot|svg|jpg|jpeg|gif|bmp|png|ico|webp|avif|heic|heif|tiff|tif|mp4|webm|avi|mov|wmv|flv|m4v|mkv|ogv|mp3|wav|ogg|m4a|aac|flac|opus|pdf|json|xml|zip|rar|tar|gz)$/;
+  const assetRegex =
+    /\.(css|js|ttf|woff|woff2|otf|eot|svg|jpg|jpeg|gif|bmp|png|ico|webp|avif|heic|heif|tiff|tif|mp4|webm|avi|mov|wmv|flv|m4v|mkv|ogv|mp3|wav|ogg|m4a|aac|flac|opus|pdf|json|xml|zip|rar|tar|gz)$/;
   if (url.pathname.match(assetRegex)) {
     if (url.pathname.includes(".devtools.json")) {
       return new Response("ok", { status: 200 });
