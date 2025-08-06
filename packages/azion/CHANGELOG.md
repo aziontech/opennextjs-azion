@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 0.0.8
+
+### Patch Changes
+
+- [#25](https://github.com/aziontech/opennextjs-azion/pull/25) [`8ee598f`](https://github.com/aziontech/opennextjs-azion/commit/8ee598f92db1d5347df283bb01d46bbf840ddf68) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - feat: implement route module patching and cache handler improvements for Next.js 15.x
+
 ## 0.0.7
 
 ### Patch Changes
