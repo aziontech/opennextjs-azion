@@ -30,6 +30,7 @@ import type { Plugin } from "esbuild";
 import { patchFetchCacheSetMissingWaitUntil } from "../patches/plugins/patch-fetch-cacheset-missing-waituntil.js";
 import { patchFetchCacheForISR, patchUnstableCacheForISR } from "../patches/plugins/path-fetch-cache-isr.js";
 import { patchResRevalidate } from "../patches/plugins/res-revalidate.js";
+import { patchUseCacheIO } from "../patches/plugins/use-cache.js";
 import { normalizePath } from "../utils/index.js";
 
 interface CodeCustomization {
@@ -143,7 +144,14 @@ async function generateBundle(
   fs.mkdirSync(outPackagePath, { recursive: true });
 
   const ext = fnOptions.runtime === "deno" ? "mjs" : "cjs";
+  // Normal cache
   fs.copyFileSync(path.join(options.buildDir, `cache.${ext}`), path.join(outPackagePath, "cache.cjs"));
+
+  // Composable cache
+  fs.copyFileSync(
+    path.join(options.buildDir, `composable-cache.${ext}`),
+    path.join(outPackagePath, "composable-cache.cjs")
+  );
 
   if (fnOptions.runtime === "deno") {
     addDenoJson(outputPath, packagePath);
@@ -194,6 +202,7 @@ async function generateBundle(
     patchResRevalidate,
     // OpenNext specific patches
     patchBackgroundRevalidation,
+    patchUseCacheIO,
     ...additionalCodePatches,
   ]);
 

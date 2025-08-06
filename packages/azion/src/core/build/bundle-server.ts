@@ -21,7 +21,6 @@ import { inlineEvalManifest } from "./patches/plugins/eval-manifest.js";
 import { inlineFindDir } from "./patches/plugins/find-dir.js";
 import { patchInstrumentation } from "./patches/plugins/instrumentation.js";
 import { inlineLoadManifest } from "./patches/plugins/load-manifest.js";
-import { patchNextMinimal } from "./patches/plugins/next-minimal.js";
 import { handleOptionalDependencies } from "./patches/plugins/optional-deps.js";
 import { patchPagesRouterContext } from "./patches/plugins/pages-router-context.js";
 import { patchDepdDeprecations } from "./patches/plugins/patch-depd-deprecations.js";
@@ -32,6 +31,7 @@ import {
 import { inlinePatchRewriteRouter } from "./patches/plugins/patch-rewrite-router.js";
 import { fixRequire } from "./patches/plugins/require.js";
 import { shimRequireHook } from "./patches/plugins/require-hook.js";
+import { patchRouteModules } from "./patches/plugins/route-module.js";
 import { needsExperimentalReact, normalizePath, patchCodeWithValidations } from "./utils/index.js";
 
 /** The dist directory of the Azion package */
@@ -109,8 +109,8 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       inlineFindDir(updater, buildOpts),
       inlineLoadManifest(updater, buildOpts),
       inlineBuildId(updater),
+      patchRouteModules(updater, buildOpts),
       patchDepdDeprecations(updater),
-      patchNextMinimal(updater),
       inlinePatchRewriteRouter(updater),
       inlinePatchRewriteInvokeHeaders(updater),
       inlinePatchRewriteURLSource(updater),
@@ -160,9 +160,18 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       "process.env.TURBOPACK": "false",
       // This define should be safe to use for Next 14.2+, earlier versions (13.5 and less) will cause trouble
       "process.env.__NEXT_EXPERIMENTAL_REACT": `${needsExperimentalReact(nextConfig)}`,
+      // Fix `res.validate` in Next 15.4 (together with the `route-module` patch)
+      "process.env.__NEXT_TRUST_HOST_HEADER": "true",
     },
     banner: {
-      js: `import {setInterval, clearInterval, setTimeout, clearTimeout, setImmediate, clearImmediate} from "node:timers"`,
+      js: `import {setInterval, clearInterval, setTimeout, clearTimeout, setImmediate, clearImmediate} from "node:timers";
+      // this temporary fix is necessary to avoid the following error on Next 15
+      // ReferenceError: queueMicrotask is not defined
+      if (typeof queueMicrotask === "undefined") {
+        globalThis.queueMicrotask = (callback) => {
+          return Promise.resolve().then(callback);
+        };
+      }`,
     },
     platform: "node",
     loader: {
@@ -198,6 +207,12 @@ export async function updateWorkerBundledCode(
   const patchedCode = await patchCodeWithValidations(code, [
     ["require", patches.patchRequire],
     ["cacheHandler", (code) => patches.patchCache(code, buildOpts)],
+    ["composableCache", (code) => patches.patchComposableCache(code, buildOpts), { isOptional: true }],
+    [
+      "'require(this.middlewareManifestPath)'",
+      (code) => patches.inlineMiddlewareManifestRequire(code, buildOpts),
+      { isOptional: true },
+    ],
     [
       "'require(this.middlewareManifestPath)'",
       (code) => patches.inlineMiddlewareManifestRequire(code, buildOpts),
