@@ -12,8 +12,8 @@ export async function deploy(
   options: BuildOptions,
   _config: OpenNextConfig,
   deployOptions: {
-    assetsDir: string;
-    cacheDir: string;
+    assetsDir?: string;
+    cacheDir?: string;
     bundlerVersion?: string;
     skipNextBuild: boolean;
     passthroughArgs: string[];

@@ -77,13 +77,13 @@ export function getCacheAssets(opts: BuildOptions): CacheAsset[] {
   return assets;
 }
 
-function populateStaticAssetsIncrementalCache(options: BuildOptions, cacheDir: string) {
+function populateStaticAssetsIncrementalCache(options: BuildOptions, cacheDir?: string) {
   logger.info("Populating cache...");
-  const storageCacheDir = path.join(cacheDir, STATIC_ASSETS_CACHE_DIR);
+  const storageCacheDir = path.join(cacheDir!, STATIC_ASSETS_CACHE_DIR);
   if (existsSync(storageCacheDir)) {
     rmSync(storageCacheDir, { recursive: true, force: true });
   }
-  cpSync(path.join(options.outputDir, "cache"), path.join(cacheDir, STATIC_ASSETS_CACHE_DIR), {
+  cpSync(path.join(options.outputDir, "cache"), path.join(cacheDir!, STATIC_ASSETS_CACHE_DIR), {
     recursive: true,
   });
   logger.info(`Successfully populated cache`);
@@ -92,7 +92,7 @@ function populateStaticAssetsIncrementalCache(options: BuildOptions, cacheDir: s
 export async function populateCache(
   options: BuildOptions,
   config: OpenNextConfig,
-  populateCacheOptions: { cacheDir: string }
+  populateCacheOptions: { cacheDir?: string }
 ) {
   const { incrementalCache } = config.default.override ?? {};
 

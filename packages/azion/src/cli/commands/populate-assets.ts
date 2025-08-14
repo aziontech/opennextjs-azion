@@ -4,7 +4,7 @@ import { BuildOptions } from "@opennextjs/aws/build/helper.js";
 
 import { copyAssets } from "../../core/utils/copy-assets.js";
 
-export async function populateAssets(options: BuildOptions, previewOptions: { assetsDir: string }) {
+export async function populateAssets(options: BuildOptions, previewOptions: { assetsDir?: string }) {
   // Copy static assets to the cache directory
-  copyAssets(path.join(options.outputDir, "assets"), path.join(previewOptions.assetsDir));
+  copyAssets(path.join(options.outputDir, "assets"), path.join(previewOptions.assetsDir!));
 }

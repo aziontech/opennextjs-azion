@@ -11,29 +11,26 @@ export type Arguments = (
       command: "build";
       skipNextBuild: boolean;
       minify: boolean;
+      assetsDir?: string;
     }
   | {
       command: "preview" | "deploy";
       passthroughArgs: string[];
-      assetsDir: string;
-      cacheDir: string;
+      assetsDir?: string;
+      cacheDir?: string;
       skipNextBuild: boolean;
       bundlerVersion?: string;
     }
   | {
       command: "populateCache";
-      assetsDir: string;
-      cacheDir: string;
+      assetsDir?: string;
+      cacheDir?: string;
     }
   | {
       command: "populateAssets";
-      assetsDir: string;
+      assetsDir?: string;
     }
 ) & { outputDir?: string };
-
-// TODO: review this when azion.config.js contains this information
-const ASSETS_DIR = ".edge/storage";
-const CACHE_DIR = ".edge/storage";
 
 export function getArgs(): Arguments {
   const { positionals, values } = parseArgs({
@@ -42,6 +39,8 @@ export function getArgs(): Arguments {
       output: { type: "string", short: "o" },
       noMinify: { type: "boolean", default: false },
       bundlerVersion: { type: "string", default: "latest" }, // Default to latest version
+      assetsDir: { type: "string", default: ".edge/storage" },
+      cacheDir: { type: "string", default: ".edge/storage" },
     },
     allowPositionals: true,
   });
@@ -63,8 +62,8 @@ export function getArgs(): Arguments {
         command: "preview",
         passthroughArgs: getPassthroughArgs(),
         outputDir,
-        assetsDir: ASSETS_DIR,
-        cacheDir: CACHE_DIR,
+        assetsDir: values.assetsDir,
+        cacheDir: values.cacheDir,
         bundlerVersion: values.bundlerVersion,
         skipNextBuild:
           values.skipBuild || ["1", "true", "yes"].includes(String(process.env.SKIP_NEXT_APP_BUILD)),
@@ -74,8 +73,8 @@ export function getArgs(): Arguments {
         command: "deploy",
         passthroughArgs: getPassthroughArgs(),
         outputDir,
-        assetsDir: ASSETS_DIR,
-        cacheDir: CACHE_DIR,
+        assetsDir: values.assetsDir,
+        cacheDir: values.cacheDir,
         bundlerVersion: values.bundlerVersion,
         skipNextBuild:
           values.skipBuild || ["1", "true", "yes"].includes(String(process.env.SKIP_NEXT_APP_BUILD)),
@@ -85,15 +84,14 @@ export function getArgs(): Arguments {
       return {
         command: "populateCache",
         outputDir,
-        assetsDir: ASSETS_DIR,
-        cacheDir: CACHE_DIR,
+        cacheDir: values.cacheDir,
       };
 
     case "populateAssets":
       return {
         command: "populateAssets",
         outputDir,
-        assetsDir: ASSETS_DIR,
+        assetsDir: values.assetsDir,
       };
 
     default:
