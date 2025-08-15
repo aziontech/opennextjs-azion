@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 0.0.9
+
+### Patch Changes
+
+- [#27](https://github.com/aziontech/opennextjs-azion/pull/27) [`2fc2c2a`](https://github.com/aziontech/opennextjs-azion/commit/2fc2c2acc7a0192ee4f9d4620af27991238add65) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - make assetsDir and cacheDir optional parameters with default values
+
 ## 0.0.8
 
 ### Patch Changes
