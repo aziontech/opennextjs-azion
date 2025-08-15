@@ -12,8 +12,8 @@ export async function preview(
   options: BuildOptions,
   _config: OpenNextConfig,
   previewOptions: {
-    assetsDir: string;
-    cacheDir: string;
+    assetsDir?: string;
+    cacheDir?: string;
     bundlerVersion?: string;
     skipNextBuild: boolean;
     passthroughArgs: string[];

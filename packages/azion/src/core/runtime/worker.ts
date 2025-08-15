@@ -8,6 +8,7 @@
 import { runWithAzionRequestContext } from "./azion/init.js";
 
 // Azion Storage API
+// TODO: future receive from azion env
 const bucketName = (globalThis as any)?.AZION_BUCKET_NAME ?? "";
 const bucketPrefix = (globalThis as any)?.AZION_BUCKET_PREFIX ?? "";
 const InstanceStorage = new (globalThis as any).Azion.Storage(bucketName);
@@ -23,6 +24,7 @@ export default {
         CACHE_API_STORAGE_NAME: (globalThis as any).AZION_CACHE_API_STORAGE_NAME ?? "nextjs_cache",
         Storage: InstanceStorage,
       },
+      // TODO: future receive from azion env
       ASSETS: {
         fetch: getStorageAsset,
       },
