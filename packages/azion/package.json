@@ -73,7 +73,7 @@
   "homepage": "https://github.com/aziontech/opennextjs-azion",
   "dependencies": {
     "@dotenvx/dotenvx": "catalog:",
-    "@opennextjs/aws": "~3.6.0",
+    "@opennextjs/aws": "3.7.2",
     "enquirer": "^2.4.1",
     "glob": "catalog:",
     "prettier": "3.3.3",

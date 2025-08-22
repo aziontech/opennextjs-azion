@@ -109,14 +109,12 @@ export const patchFetchCacheForISR: CodePatcher = {
   patches: [
     {
       versions: ">=13.0.0",
-      field: {
-        pathFilter: getCrossPlatformPathRegex(
-          String.raw`(server/chunks/.*\.js|.*\.runtime\..*\.js|patch-fetch\.js)$`,
-          { escape: false }
-        ),
-        contentFilter: /\.isOnDemandRevalidate/,
-        patchCode: createPatchCode(fetchRule),
-      },
+      pathFilter: getCrossPlatformPathRegex(
+        String.raw`(server/chunks/.*\.js|.*\.runtime\..*\.js|patch-fetch\.js)$`,
+        { escape: false }
+      ),
+      contentFilter: /\.isOnDemandRevalidate/,
+      patchCode: createPatchCode(fetchRule),
     },
   ],
 };
@@ -126,14 +124,12 @@ export const patchUnstableCacheForISR: CodePatcher = {
   patches: [
     {
       versions: ">=13.0.0",
-      field: {
-        pathFilter: getCrossPlatformPathRegex(
-          String.raw`(server/chunks/.*\.js|.*\.runtime\..*\.js|spec-extension/unstable-cache\.js)$`,
-          { escape: false }
-        ),
-        contentFilter: /\.isOnDemandRevalidate/,
-        patchCode: createPatchCode(unstable_cacheRule),
-      },
+      pathFilter: getCrossPlatformPathRegex(
+        String.raw`(server/chunks/.*\.js|.*\.runtime\..*\.js|spec-extension/unstable-cache\.js)$`,
+        { escape: false }
+      ),
+      contentFilter: /\.isOnDemandRevalidate/,
+      patchCode: createPatchCode(unstable_cacheRule),
     },
   ],
 };
@@ -143,14 +139,12 @@ export const patchUseCacheForISR: CodePatcher = {
   patches: [
     {
       versions: ">=15.3.0",
-      field: {
-        pathFilter: getCrossPlatformPathRegex(
-          String.raw`(server/chunks/.*\.js|\.runtime\..*\.js|use-cache/use-cache-wrapper\.js)$`,
-          { escape: false }
-        ),
-        contentFilter: /\.isOnDemandRevalidate/,
-        patchCode: createPatchCode(useCacheRule),
-      },
+      pathFilter: getCrossPlatformPathRegex(
+        String.raw`(server/chunks/.*\.js|\.runtime\..*\.js|use-cache/use-cache-wrapper\.js)$`,
+        { escape: false }
+      ),
+      contentFilter: /\.isOnDemandRevalidate/,
+      patchCode: createPatchCode(useCacheRule),
     },
   ],
 };

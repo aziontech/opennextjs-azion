@@ -15,7 +15,7 @@ import * as buildHelper from "@opennextjs/aws/build/helper.js";
 import { installDependencies } from "@opennextjs/aws/build/installDeps.js";
 import type { CodePatcher } from "@opennextjs/aws/build/patch/codePatcher.js";
 import { applyCodePatches } from "@opennextjs/aws/build/patch/codePatcher.js";
-import { patchBackgroundRevalidation } from "@opennextjs/aws/build/patch/patches/patchBackgroundRevalidation.js";
+import * as awsPatches from "@opennextjs/aws/build/patch/patches/index.js";
 import logger from "@opennextjs/aws/logger.js";
 import { minifyAll } from "@opennextjs/aws/minimize-js.js";
 import type { ContentUpdater } from "@opennextjs/aws/plugins/content-updater.js";
@@ -196,12 +196,16 @@ async function generateBundle(
 
   await applyCodePatches(options, tracedFiles, manifests, [
     // Azion specific patches
+    awsPatches.patchUseCacheForISR,
+    awsPatches.patchNextServer,
+    awsPatches.patchEnvVars,
+    awsPatches.patchBackgroundRevalidation,
+    // OpenNext specific patches
     patchFetchCacheSetMissingWaitUntil,
     patchFetchCacheForISR,
     patchUnstableCacheForISR,
     patchResRevalidate,
     // OpenNext specific patches
-    patchBackgroundRevalidation,
     patchUseCacheIO,
     ...additionalCodePatches,
   ]);
@@ -222,6 +226,8 @@ async function generateBundle(
   // const isAfter142 = buildHelper.compareSemver(options.nextVersion, ">=", "14.2");
   const isAfter1350 = buildHelper.compareSemver(options.nextVersion, ">=", "13.5.0");
   // console.log(`isAfter1350: ${isAfter1350}`);
+  const isAfter152 = buildHelper.compareSemver(options.nextVersion, ">=", "15.2.0");
+  const isAfter154 = buildHelper.compareSemver(options.nextVersion, ">=", "15.4.0");
 
   const disableRouting = isBefore13413 || config.middleware?.external;
 
@@ -233,6 +239,7 @@ async function generateBundle(
         ...(disableNextPrebundledReact ? ["applyNextjsPrebundledReact"] : []),
         ...(disableRouting ? ["withRouting"] : []),
         ...(isAfter1350 ? ["patchAsyncStorage"] : []),
+        ...(isAfter154 ? [] : ["setInitialURL"]),
       ],
     }),
     openNextReplacementPlugin({
@@ -242,6 +249,7 @@ async function generateBundle(
         ...(disableNextPrebundledReact ? ["requireHooks"] : []),
         ...(isBefore13413 ? ["trustHostHeader"] : ["requestHandlerHost"]),
         ...(isAfter141 ? ["experimentalIncrementalCacheHandler"] : ["stableIncrementalCache"]),
+        ...(isAfter152 ? [""] : ["composableCache"]),
       ],
     }),
 

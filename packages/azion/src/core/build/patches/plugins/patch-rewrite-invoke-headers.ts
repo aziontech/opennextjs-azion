@@ -7,13 +7,11 @@ import { getCrossPlatformPathRegex } from "@opennextjs/aws/utils/regex.js";
 export function inlinePatchRewriteInvokeHeaders(updater: ContentUpdater): Plugin {
   return updater.updateContent("patch-rewrite-invoke-headers", [
     {
-      field: {
-        filter: getCrossPlatformPathRegex(String.raw`/server-functions/default/index\.mjs$`, {
-          escape: false,
-        }),
-        contentFilter: /async function processRequest\s*\(/,
-        callback: ({ contents }) => patchCode(contents, ruleRewriteInvokeHeaders),
-      },
+      filter: getCrossPlatformPathRegex(String.raw`/server-functions/default/index\.mjs$`, {
+        escape: false,
+      }),
+      contentFilter: /async function processRequest\s*\(/,
+      callback: ({ contents }) => patchCode(contents, ruleRewriteInvokeHeaders),
     },
   ]);
 }
@@ -40,13 +38,11 @@ fix: |-
 export function inlinePatchRewriteURLSource(updater: ContentUpdater): Plugin {
   return updater.updateContent("patch-rewrite-url-source", [
     {
-      field: {
-        filter: getCrossPlatformPathRegex(String.raw`/server-functions/default/index\.mjs$`, {
-          escape: false,
-        }),
-        contentFilter: /async function openNextHandler\s*\(/,
-        callback: ({ contents }) => patchCode(contents, ruleRewriteURLSource),
-      },
+      filter: getCrossPlatformPathRegex(String.raw`/server-functions/default/index\.mjs$`, {
+        escape: false,
+      }),
+      contentFilter: /async function openNextHandler\s*\(/,
+      callback: ({ contents }) => patchCode(contents, ruleRewriteURLSource),
     },
   ]);
 }
