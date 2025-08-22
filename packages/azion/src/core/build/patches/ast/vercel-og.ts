@@ -64,3 +64,42 @@ fix: |-
 export function patchVercelOgFallbackFont(root: SgNode) {
   return applyRule(vercelOgFallbackFontRule, root);
 }
+
+export const vercelOgYogaRule = `
+rule:
+  pattern: var initializedResvg = initWasm(resvg_wasm);
+
+fix: |-
+  async function loadWasm(mod) {
+    if (typeof mod === "string" && mod.startsWith("file://")) {
+      const res = await fetch(mod); 
+      return await res.arrayBuffer(); 
+    }
+    if (mod instanceof Response) {
+      return await mod.arrayBuffer();
+    }
+    return mod; 
+  }
+  const resvg_wasm_bytes = await loadWasm(resvg_wasm);
+  const initializedResvg = initWasm(resvg_wasm_bytes);
+`;
+
+export const vercelOgYogaSecondRule = `
+rule:
+  any:
+    - pattern: var initializedYoga = initYoga(yoga_wasm).then((yoga2) => Ll(yoga2));
+    - pattern: var initializedYoga = initYoga(yoga_wasm).then(yoga2 => Ll(yoga2));
+
+fix: |-
+  const yoga_wasm_bytes = await loadWasm(yoga_wasm);
+  const initializedYoga = initYoga(yoga_wasm_bytes).then(yoga2 => Ll(yoga2));
+`;
+
+export function patchVercelOgYoga(root: SgNode): ReturnType<typeof applyRule> {
+  const firstResult = applyRule(vercelOgYogaRule, root);
+  const secondResult = applyRule(vercelOgYogaSecondRule, root);
+  return {
+    edits: [...firstResult.edits, ...secondResult.edits],
+    matches: [...firstResult.matches, ...secondResult.matches],
+  };
+}
