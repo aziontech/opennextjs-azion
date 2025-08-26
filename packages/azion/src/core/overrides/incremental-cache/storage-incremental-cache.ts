@@ -13,7 +13,7 @@ import { IgnorableError, RecoverableError } from "@opennextjs/aws/utils/error.js
 
 import { getAzionContext } from "../../../api/azion-context.js";
 import CacheApi from "../../../api/cache-api/index.js";
-import { debugCache, FALLBACK_BUILD_ID } from "../internal.js";
+import { computeCacheKey, debugCache, DEFAULT_PREFIX, FALLBACK_BUILD_ID } from "../internal.js";
 
 //  Assets inside `data-cache/...` are only accessible by the worker.
 export const CACHE_DIR = "data-cache/_next_cache";
@@ -79,20 +79,25 @@ class StorageIncrementalCache implements IncrementalCache {
   }
 
   protected getCacheURL(key: string, cacheType?: CacheEntryType, bucketPrefix?: string): string {
-    const buildId = process.env.NEXT_BUILD_ID ?? FALLBACK_BUILD_ID;
     const name = (
       cacheType === "fetch"
-        ? `${bucketPrefix}/${CACHE_DIR}/__fetch/${buildId}/${key}`
-        : `${bucketPrefix}/${CACHE_DIR}/${buildId}/${key}.cache`
+        ? `${bucketPrefix}/${CACHE_DIR}/__fetch/${key}`
+        : `${bucketPrefix}/${CACHE_DIR}/${key}`
     ).replace(/\/+/g, "/");
     return name;
   }
 
   protected async getCacheApiOrStorage(key: string, cacheType: CacheEntryType): Promise<string> {
+    const keyComputed = computeCacheKey(key, {
+      cacheType,
+      prefix: DEFAULT_PREFIX,
+      buildId: BUILD_ID,
+    });
+
     const azionContext = getAzionContext();
     const resCacheAPI = await CacheApi.getCacheAPI(
       `${this.storageCachePrefix}_${azionContext.env.AZION?.CACHE_API_STORAGE_NAME}`,
-      key
+      keyComputed
     ).catch((e) => {
       debugCache(e.message);
       return null;
@@ -102,12 +107,13 @@ class StorageIncrementalCache implements IncrementalCache {
       return resCacheAPI;
     }
     debugCache("StorageIncrementalCache - MISS by CACHE_API for key:", key, "falling back to storage");
-    const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION?.BUCKET_PREFIX);
+    const keyURL = this.getCacheURL(keyComputed, cacheType, azionContext.env.AZION?.BUCKET_PREFIX);
     const fileValue = await azionContext.env.AZION?.Storage.get(keyURL).catch(() => {
       debugCache(`StorageIncrementalCache - Cache file not exist on storage`);
       return null;
     });
-    if (!fileValue) throw new IgnorableError(`StorageIncrementalCache - Cache file not found at ${key}`);
+    if (!fileValue)
+      throw new IgnorableError(`StorageIncrementalCache - Cache file not found at ${keyComputed}`);
     const fileValueArray = await fileValue.arrayBuffer();
     const decoder = new TextDecoder();
     const cacheContent = decoder.decode(fileValueArray);
@@ -115,7 +121,7 @@ class StorageIncrementalCache implements IncrementalCache {
     // set cache API because ssg pages are not stored in first run
     if (!resCacheAPI) {
       debugCache("StorageIncrementalCache - Setting CACHE_API FIRST TIME:", key);
-      this.setCacheApiOrStorage(key, JSON.parse(cacheContent), cacheType, true).catch((e) => {
+      this.setCacheApiOrStorage(keyComputed, JSON.parse(cacheContent), cacheType, true).catch((e) => {
         debugCache("Failed to set cache API:", e.message);
       });
     }
@@ -128,6 +134,11 @@ class StorageIncrementalCache implements IncrementalCache {
     cacheType: CacheEntryType,
     onlyCacheApi = false
   ): Promise<void> {
+    const keyComputed = computeCacheKey(key, {
+      cacheType,
+      prefix: DEFAULT_PREFIX,
+      buildId: BUILD_ID,
+    });
     const azionContext = getAzionContext();
     const newCacheValue = JSON.stringify({
       ...value,
@@ -137,7 +148,7 @@ class StorageIncrementalCache implements IncrementalCache {
     // Cache API
     await CacheApi.putCacheAPIkey(
       `${this.storageCachePrefix}_${azionContext.env.AZION?.CACHE_API_STORAGE_NAME}`,
-      key,
+      keyComputed,
       newCacheValue
     ).catch((e) => {
       debugCache(e.message);
@@ -150,11 +161,11 @@ class StorageIncrementalCache implements IncrementalCache {
     }
     const encoder = new TextEncoder();
     const newCacheValueBuffer = encoder.encode(newCacheValue);
-    const keyURL = this.getCacheURL(key, cacheType, azionContext.env.AZION?.BUCKET_PREFIX);
+    const keyURL = this.getCacheURL(keyComputed, cacheType, azionContext.env.AZION?.BUCKET_PREFIX);
     await azionContext.env.AZION?.Storage.put(keyURL, newCacheValueBuffer, {
       metadata: { id: `${BUILD_ID}` },
     });
-    debugCache("StorageIncrementalCache - written to storage for key:", key);
+    debugCache("StorageIncrementalCache - written to storage for key:", keyComputed);
   }
 }
 
