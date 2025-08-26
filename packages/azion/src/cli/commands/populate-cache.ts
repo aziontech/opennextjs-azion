@@ -15,13 +15,13 @@ import type {
 } from "@opennextjs/aws/types/open-next.js";
 import type { IncrementalCache, TagCache } from "@opennextjs/aws/types/overrides.js";
 import { globSync } from "glob";
+import { tqdm } from "ts-tqdm";
 
 import {
   CACHE_DIR as STATIC_ASSETS_CACHE_DIR,
   NAME as STATIC_ASSETS_CACHE_NAME,
 } from "../../core/overrides/incremental-cache/storage-incremental-cache.js";
 import { computeCacheKey, DEFAULT_PREFIX, NAME_FILE_TAG_MANIFEST } from "../../core/overrides/internal.js";
-import { tqdm } from "ts-tqdm";
 
 async function resolveCacheName(
   value:

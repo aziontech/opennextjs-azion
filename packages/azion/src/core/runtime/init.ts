@@ -95,8 +95,12 @@ function initRuntime() {
 
   Object.assign(globalThis, {
     Request: CustomRequest,
-    //@ts-expect-error Inline at build time by ESBuild
-    __BUILD_TIMESTAMP_MS__: __BUILD_TIMESTAMP_MS__,
+    __BUILD_TIMESTAMP_MS__,
+    __NEXT_BASE_PATH__,
+    // The external middleware will use the convertTo function of the `edge` converter
+    // by default it will try to fetch the request, but since we are running everything in the same worker
+    // we need to use the request as is.
+    __dangerous_ON_edge_converter_returns_request: true,
   });
 }
 
@@ -129,4 +133,16 @@ export function populateProcessEnv(url: URL, env: AzionEnv) {
       port: url.port,
     },
   });
+}
+
+declare global {
+  // Build timestamp
+  // eslint-disable-next-line no-var
+  var __BUILD_TIMESTAMP_MS__: number;
+  // Next basePath
+  // eslint-disable-next-line no-var
+  var __NEXT_BASE_PATH__: string;
+  // Deployment ID
+  // eslint-disable-next-line no-var
+  var __DEPLOYMENT_ID__: string;
 }

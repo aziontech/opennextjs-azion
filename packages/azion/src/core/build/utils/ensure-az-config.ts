@@ -1,5 +1,5 @@
 import logger from "@opennextjs/aws/logger.js";
-import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
+import type { ExternalMiddlewareConfig, OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 
 /**
  * Ensures open next is configured for azion.
@@ -7,6 +7,8 @@ import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
  * @param config OpenNext configuration.
  */
 export function ensureAzionConfig(config: OpenNextConfig) {
+  const mwIsMiddlewareExternal = config.middleware?.external === true;
+  const mwConfig = mwIsMiddlewareExternal ? (config.middleware as ExternalMiddlewareConfig) : undefined;
   const requirements = {
     // TODO: in the future move to the open-next aws package
     dftUseAzionWrapper: typeof config.default?.override?.wrapper === "function",
@@ -22,7 +24,11 @@ export function ensureAzionConfig(config: OpenNextConfig) {
       config.default?.override?.queue === "dummy" ||
       config.default?.override?.queue === "direct" ||
       typeof config.default?.override?.queue === "function",
-    mwIsMiddlewareIntegrated: config.middleware === undefined,
+    // Check for the middleware function
+    mwIsMiddlewareExternal,
+    mwUseCloudflareWrapper: true,
+    mwUseEdgeConverter: mwConfig?.override?.converter === "edge",
+    mwUseFetchProxy: mwConfig?.override?.proxyExternalRequest === "fetch",
     hasCryptoExternal: config.edgeExternals?.includes("node:crypto"),
   };
 
@@ -45,6 +51,17 @@ export function ensureAzionConfig(config: OpenNextConfig) {
             },
           },
           edgeExternals: ["node:crypto"],
+          middleware: {
+            external: true,
+            override: {
+              wrapper: "azion-wrapper-edge",
+              converter: "edge",
+              proxyExternalRequest: "fetch",
+              incrementalCache: "dummy" | function,
+              tagCache: "dummy" | function,
+              queue: "dummy" | "direct" | function,
+            },
+          },
         }\n\n`.replace(/^ {8}/gm, "")
     );
   }
