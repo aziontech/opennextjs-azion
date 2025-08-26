@@ -7,6 +7,10 @@ class CacheApi {
     try {
       debugCache("CacheApi - Get for key:", key, cacheStorageName);
       // @ts-ignore
+      if (!caches) {
+        throw new Error("CacheApi not available");
+      }
+      // @ts-ignore
       const cache = await caches.open(cacheStorageName);
       const url = new URL(key, `http://${this.hostname}`);
       const request = new Request(url);
@@ -24,6 +28,10 @@ class CacheApi {
   static async putCacheAPIkey(cacheStorageName: string, key: string, content: string): Promise<void> {
     try {
       // @ts-ignore
+      if (!caches) {
+        throw new Error("CacheApi not available");
+      }
+      // @ts-ignore
       const cache = await caches.open(cacheStorageName);
       const url = new URL(key, `http://${this.hostname}`);
       const request = new Request(url);
@@ -37,6 +45,10 @@ class CacheApi {
   }
   static async deleteCacheAPIkey(cacheStorageName: string, key: string): Promise<any> {
     try {
+      // @ts-ignore
+      if (!caches) {
+        throw new Error("CacheApi not available");
+      }
       // @ts-ignore
       const cache = await caches.open(cacheStorageName);
       const url = new URL(key, `http://${this.hostname}`);

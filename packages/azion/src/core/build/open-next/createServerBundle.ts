@@ -195,17 +195,16 @@ async function generateBundle(
   const additionalCodePatches = codeCustomization?.additionalCodePatches ?? [];
 
   await applyCodePatches(options, tracedFiles, manifests, [
-    // Azion specific patches
+    // OpenNext specific patches
     awsPatches.patchUseCacheForISR,
     awsPatches.patchNextServer,
     awsPatches.patchEnvVars,
     awsPatches.patchBackgroundRevalidation,
-    // OpenNext specific patches
+    // Azion specific patches
     patchFetchCacheSetMissingWaitUntil,
     patchFetchCacheForISR,
     patchUnstableCacheForISR,
     patchResRevalidate,
-    // OpenNext specific patches
     patchUseCacheIO,
     ...additionalCodePatches,
   ]);
