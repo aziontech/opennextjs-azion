@@ -25,14 +25,14 @@ rule:
     - has: { pattern: $_.FETCH, stopBy: end }
 
 fix: |
-  globalThis.__openNextAls?.getStore()?.waitUntil?.($PROMISE)
+  globalThis.__openNextAls?.getStore()?.pendingPromiseRunner.add($PROMISE)
 `;
 
 export const patchFetchCacheSetMissingWaitUntil: CodePatcher = {
   name: "patch-fetch-cache-set-missing-wait-until",
   patches: [
     {
-      versions: ">=13.0.0",
+      versions: ">=15.0.0",
       pathFilter: getCrossPlatformPathRegex(
         String.raw`(server/chunks/.*\.js|.*\.runtime\..*\.js|patch-fetch\.js)$`,
         { escape: false }

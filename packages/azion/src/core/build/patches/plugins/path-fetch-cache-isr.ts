@@ -133,18 +133,3 @@ export const patchUnstableCacheForISR: CodePatcher = {
     },
   ],
 };
-
-export const patchUseCacheForISR: CodePatcher = {
-  name: "patch-use-cache-for-isr",
-  patches: [
-    {
-      versions: ">=15.3.0",
-      pathFilter: getCrossPlatformPathRegex(
-        String.raw`(server/chunks/.*\.js|\.runtime\..*\.js|use-cache/use-cache-wrapper\.js)$`,
-        { escape: false }
-      ),
-      contentFilter: /\.isOnDemandRevalidate/,
-      patchCode: createPatchCode(useCacheRule),
-    },
-  ],
-};

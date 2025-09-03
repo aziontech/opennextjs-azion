@@ -30,7 +30,7 @@ export const patchUseCacheIO: CodePatcher = {
   name: "patch-use-cache",
   patches: [
     {
-      versions: ">=15.0.0",
+      versions: ">=15.3.1",
       pathFilter: getCrossPlatformPathRegex(String.raw`server/app-render/async-local-storage\.js$`, {
         escape: false,
       }),

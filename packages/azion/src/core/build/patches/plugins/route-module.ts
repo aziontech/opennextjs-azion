@@ -18,10 +18,10 @@ import { normalizePath } from "../../utils/index.js";
 export function patchRouteModules(updater: ContentUpdater, buildOpts: BuildOptions): Plugin {
   return updater.updateContent("route-module", [
     {
-      versions: ">=15.1.0",
       filter: getCrossPlatformPathRegex(String.raw`/next/dist/compiled/next-server/.*?\.runtime\.prod\.js$`, {
         escape: false,
       }),
+      versions: ">=15.4.0",
       contentFilter: /getIncrementalCache\(/,
       callback: async ({ contents }) => {
         const { outputDir } = buildOpts;
