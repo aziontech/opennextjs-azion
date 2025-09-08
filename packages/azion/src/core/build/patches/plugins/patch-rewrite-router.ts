@@ -6,13 +6,11 @@ import { getCrossPlatformPathRegex } from "@opennextjs/aws/utils/regex.js";
 export function inlinePatchRewriteRouter(updater: ContentUpdater): Plugin {
   return updater.updateContent("patch-rewrite-router", [
     {
-      field: {
-        filter: getCrossPlatformPathRegex(String.raw`/server-functions/default/index\.mjs$`, {
-          escape: false,
-        }),
-        contentFilter: /function handleRewrites\s*\(/,
-        callback: ({ contents }) => patchCode(contents, ruleRewriteRouter),
-      },
+      filter: getCrossPlatformPathRegex(String.raw`/server-functions/default/index\.mjs$`, {
+        escape: false,
+      }),
+      contentFilter: /function handleRewrites\s*\(/,
+      callback: ({ contents }) => patchCode(contents, ruleRewriteRouter),
     },
   ]);
 }

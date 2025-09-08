@@ -2,7 +2,7 @@
  * This code was originally copied and modified from the @opennextjs/cloudflare repository.
  * Significant changes have been made to adapt it for use with Azion.
  */
-import { cpSync, existsSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import type { BuildOptions } from "@opennextjs/aws/build/helper.js";
@@ -15,11 +15,13 @@ import type {
 } from "@opennextjs/aws/types/open-next.js";
 import type { IncrementalCache, TagCache } from "@opennextjs/aws/types/overrides.js";
 import { globSync } from "glob";
+import { tqdm } from "ts-tqdm";
 
 import {
   CACHE_DIR as STATIC_ASSETS_CACHE_DIR,
   NAME as STATIC_ASSETS_CACHE_NAME,
 } from "../../core/overrides/incremental-cache/storage-incremental-cache.js";
+import { computeCacheKey, DEFAULT_PREFIX, NAME_FILE_TAG_MANIFEST } from "../../core/overrides/internal.js";
 
 async function resolveCacheName(
   value:
@@ -83,10 +85,46 @@ function populateStaticAssetsIncrementalCache(options: BuildOptions, cacheDir?: 
   if (existsSync(storageCacheDir)) {
     rmSync(storageCacheDir, { recursive: true, force: true });
   }
-  cpSync(path.join(options.outputDir, "cache"), path.join(cacheDir!, STATIC_ASSETS_CACHE_DIR), {
-    recursive: true,
-  });
-  logger.info(`Successfully populated cache`);
+
+  // Create the cache directory if it doesn't exist
+  mkdirSync(storageCacheDir, { recursive: true });
+
+  const assets = getCacheAssets(options);
+
+  logger.info(`Writing ${assets.length} cache files to ${storageCacheDir}`);
+
+  for (const asset of tqdm(assets)) {
+    const { fullPath, key, buildId, isFetch } = asset;
+
+    // Compute the cache key (this will be hashed for safe file names)
+    const cacheKey = computeCacheKey(key, {
+      prefix: DEFAULT_PREFIX,
+      buildId,
+      cacheType: isFetch ? "fetch" : "cache",
+    });
+
+    // Create the full file path in the cache directory
+    const cacheFilePath = path.join(storageCacheDir, cacheKey);
+
+    // Ensure the directory exists for nested paths
+    const cacheFileDir = path.dirname(cacheFilePath);
+    if (!existsSync(cacheFileDir)) {
+      mkdirSync(cacheFileDir, { recursive: true });
+    }
+
+    // Read the original file content and write it to the cache location
+    const fileContent = readFileSync(fullPath, "utf8");
+    writeFileSync(cacheFilePath, fileContent, "utf8");
+  }
+
+  // Copy tag manifest
+  if (existsSync(path.join(options.outputDir, "azion", NAME_FILE_TAG_MANIFEST))) {
+    const tagManifestPath = path.join(options.outputDir, "azion", NAME_FILE_TAG_MANIFEST);
+    cpSync(tagManifestPath, path.join(storageCacheDir, NAME_FILE_TAG_MANIFEST));
+    rmSync(tagManifestPath);
+  }
+
+  logger.info(`Successfully populated cache with ${assets.length} files`);
 }
 
 export async function populateCache(

@@ -12,13 +12,11 @@ export function inlineDynamicRequireLoadComponents(updater: ContentUpdater, buil
   return updater.updateContent("inline-dynamic-manifest", [
     {
       versions: "<=14.0.0",
-      field: {
-        filter: getCrossPlatformPathRegex(String.raw`/next/dist/server/load-components\.js$`, {
-          escape: false,
-        }),
-        contentFilter: /async function loadClientReferenceManifest\(/,
-        callback: async ({ contents }) => patchCode(contents, await getRule(buildOpts)),
-      },
+      filter: getCrossPlatformPathRegex(String.raw`/next/dist/server/load-components\.js$`, {
+        escape: false,
+      }),
+      contentFilter: /async function loadClientReferenceManifest\(/,
+      callback: async ({ contents }) => patchCode(contents, await getRule(buildOpts)),
     },
   ]);
 }

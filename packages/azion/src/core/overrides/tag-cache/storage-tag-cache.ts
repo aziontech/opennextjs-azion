@@ -8,10 +8,9 @@ import { IgnorableError } from "@opennextjs/aws/utils/error.js";
 
 import { getAzionContext } from "../../../api";
 import CacheApi from "../../../api/cache-api";
-import { debugCache, FALLBACK_BUILD_ID } from "../internal.js";
+import { debugCache, FALLBACK_BUILD_ID, NAME_FILE_TAG_MANIFEST } from "../internal.js";
 
 const CACHE_DIR = "data-cache/_next_cache";
-const CACHE_TAGS_MANIFEST = `cache-tags-manifest.cache`;
 const BUILD_ID = process.env.NEXT_BUILD_ID ?? FALLBACK_BUILD_ID;
 
 type TagsManifest = {
@@ -39,7 +38,7 @@ const getTagManifestStorage = async (filePath: string): Promise<string> => {
   // set the manifest content to be cache api because the first time is not setted
   await CacheApi.putCacheAPIkey(
     `${BUILD_ID}_${azionContext.env.AZION?.CACHE_API_STORAGE_NAME}`,
-    CACHE_TAGS_MANIFEST,
+    NAME_FILE_TAG_MANIFEST,
     manifestContent
   ).catch((e) => {
     debugCache(`StorageTagCache - Error writing tags manifest to cache API: ${e.message}`);
@@ -53,7 +52,7 @@ const getManifestCacheApiOrStorage = async (): Promise<string> => {
   const azionContext = getAzionContext();
   const cacheApiManifest = await CacheApi.getCacheAPI(
     `${BUILD_ID}_${azionContext.env.AZION?.CACHE_API_STORAGE_NAME}`,
-    CACHE_TAGS_MANIFEST
+    NAME_FILE_TAG_MANIFEST
   ).catch((e) => {
     debugCache(e.message);
     return null;
@@ -63,7 +62,7 @@ const getManifestCacheApiOrStorage = async (): Promise<string> => {
     return cacheApiManifest;
   }
   debugCache("StorageTagCache - MISS for tags manifest, falling back to storage");
-  return await getTagManifestStorage(CACHE_TAGS_MANIFEST);
+  return await getTagManifestStorage(NAME_FILE_TAG_MANIFEST);
 };
 
 const setManifestCacheApiOrStorage = async (manifest: TagsManifest): Promise<void> => {
@@ -72,7 +71,7 @@ const setManifestCacheApiOrStorage = async (manifest: TagsManifest): Promise<voi
   // Cache API PUT
   await CacheApi.putCacheAPIkey(
     `${BUILD_ID}_${azionContext.env.AZION?.CACHE_API_STORAGE_NAME}`,
-    CACHE_TAGS_MANIFEST,
+    NAME_FILE_TAG_MANIFEST,
     manifestString
   ).catch((e) => {
     debugCache(e.message);
@@ -81,7 +80,7 @@ const setManifestCacheApiOrStorage = async (manifest: TagsManifest): Promise<voi
   // Storage PUT
   const encoder = new TextEncoder();
   const tagsBuffer = encoder.encode(manifestString);
-  const storagePath = `${azionContext.env.AZION?.BUCKET_PREFIX}/${CACHE_DIR}/${CACHE_TAGS_MANIFEST}`;
+  const storagePath = `${azionContext.env.AZION?.BUCKET_PREFIX}/${CACHE_DIR}/${NAME_FILE_TAG_MANIFEST}`;
   await azionContext.env.AZION?.Storage.put(storagePath, tagsBuffer, {
     metadata: { id: `${BUILD_ID}` },
   });

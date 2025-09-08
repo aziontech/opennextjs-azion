@@ -14,13 +14,14 @@ import { build, type Plugin } from "esbuild";
 import { patchVercelOgLibrary } from "./patches/ast/patch-vercel-og-library.js";
 import { patchWebpackRuntime } from "./patches/ast/webpack-runtime.js";
 import * as patches from "./patches/index.js";
-import { inlineBuildId } from "./patches/plugins/build-id.js";
+import { setBundlerExternal } from "./patches/plugins/bundler-externals.js";
 import { inlineDynamicRequireLoadComponents } from "./patches/plugins/dynamic-require-load-components.js";
 import { inlineDynamicRequires } from "./patches/plugins/dynamic-requires.js";
-import { inlineEvalManifest } from "./patches/plugins/eval-manifest.js";
 import { inlineFindDir } from "./patches/plugins/find-dir.js";
 import { patchInstrumentation } from "./patches/plugins/instrumentation.js";
 import { inlineLoadManifest } from "./patches/plugins/load-manifest.js";
+import { patchNextServer } from "./patches/plugins/next-server.js";
+import { patchNodeEnvironment } from "./patches/plugins/node-environment.js";
 import { handleOptionalDependencies } from "./patches/plugins/optional-deps.js";
 import { patchPagesRouterContext } from "./patches/plugins/pages-router-context.js";
 import { patchDepdDeprecations } from "./patches/plugins/patch-depd-deprecations.js";
@@ -99,21 +100,22 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
     conditions: [],
     plugins: [
       shimRequireHook(buildOpts),
+      setBundlerExternal(buildOpts),
       inlineDynamicRequireLoadComponents(updater, buildOpts),
       inlineDynamicRequires(updater, buildOpts),
       fixRequire(updater),
       handleOptionalDependencies(optionalDependencies),
       patchInstrumentation(updater, buildOpts),
       patchPagesRouterContext(buildOpts),
-      inlineEvalManifest(updater, buildOpts),
       inlineFindDir(updater, buildOpts),
       inlineLoadManifest(updater, buildOpts),
-      inlineBuildId(updater),
+      patchNextServer(updater, buildOpts),
       patchRouteModules(updater, buildOpts),
       patchDepdDeprecations(updater),
       inlinePatchRewriteRouter(updater),
       inlinePatchRewriteInvokeHeaders(updater),
       inlinePatchRewriteURLSource(updater),
+      patchNodeEnvironment(updater),
       // Apply updater updates, must be the last plugin
       updater.plugin,
     ] as Plugin[],
@@ -174,10 +176,6 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       }`,
     },
     platform: "node",
-    loader: {
-      ".wasm": "file",
-      ".bin": "file",
-    },
   });
 
   fs.writeFileSync(openNextServerBundle + ".meta.json", JSON.stringify(result.metafile, null, 2));
@@ -206,8 +204,6 @@ export async function updateWorkerBundledCode(
 
   const patchedCode = await patchCodeWithValidations(code, [
     ["require", patches.patchRequire],
-    ["cacheHandler", (code) => patches.patchCache(code, buildOpts)],
-    ["composableCache", (code) => patches.patchComposableCache(code, buildOpts), { isOptional: true }],
     [
       "'require(this.middlewareManifestPath)'",
       (code) => patches.inlineMiddlewareManifestRequire(code, buildOpts),

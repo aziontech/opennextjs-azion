@@ -10,7 +10,7 @@ import { getPackagePath } from "@opennextjs/aws/build/helper.js";
 import { parseFile } from "@opennextjs/aws/build/patch/astCodePatcher.js";
 import { globSync } from "glob";
 
-import { patchVercelOgFallbackFont, patchVercelOgImport } from "./vercel-og.js";
+import { patchVercelOgFallbackFont, patchVercelOgImport, patchVercelOgYoga } from "./vercel-og.js";
 
 type TraceInfo = { version: number; files: string[] };
 
@@ -53,6 +53,10 @@ export function patchVercelOgLibrary(buildOpts: BuildOptions) {
       const fontFileName = matches[0]!.getMatch("PATH")!.text();
       renameSync(path.join(outputDir, fontFileName), path.join(outputDir, `${fontFileName}.bin`));
     }
+    // Patch Yoga
+    const nodeIndex = parseFile(outputEdgePath);
+    const { edits: editsYoga } = patchVercelOgYoga(nodeIndex);
+    writeFileSync(outputEdgePath, nodeIndex.commitEdits(editsYoga));
 
     // Change node imports for the library to edge imports.
     const routeFilePath = traceInfoPath.replace(appBuildOutputPath, packagePath).replace(".nft.json", "");

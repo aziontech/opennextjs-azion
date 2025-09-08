@@ -14,10 +14,14 @@ const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
 // TODO: in the future move to the open-next aws package
 const handler: WrapperHandler<InternalEvent, InternalResult> =
   async (handler, converter) =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async (request: Request, env: Record<string, string>, ctx: any): Promise<Response> => {
+  async (
+    request: Request,
+    env: Record<string, string>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ctx: any,
+    abortSignal: AbortSignal
+  ): Promise<Response> => {
     globalThis.process = process;
-
     // Set the environment variables
     for (const [key, value] of Object.entries(env)) {
       if (typeof value === "string") {
@@ -32,7 +36,11 @@ const handler: WrapperHandler<InternalEvent, InternalResult> =
     const { promise: promiseResponse, resolve: resolveResponse } = Promise.withResolvers<Response>();
 
     const streamCreator: StreamCreator = {
-      writeHeaders(prelude: { statusCode: number; cookies: string[]; headers: Record<string, string> }) {
+      writeHeaders(prelude: {
+        statusCode: number;
+        cookies: string[];
+        headers: Record<string, string>;
+      }): Writable {
         const { statusCode, cookies, headers } = prelude;
 
         const responseHeaders = new Headers(headers);
@@ -59,6 +67,10 @@ const handler: WrapperHandler<InternalEvent, InternalResult> =
         // @ts-ignore
         return Writable.fromWeb(writable);
       },
+      // This is for passing along the original abort signal from the initial Request you retrieve in your worker
+      // Ensures that the response we pass to NextServer is aborted if the request is aborted
+      // By doing this `request.signal.onabort` will work in route handlers
+      abortSignal: abortSignal,
     };
 
     ctx.waitUntil(
@@ -75,5 +87,4 @@ export default {
   wrapper: handler,
   name: "azion-wrapper-node",
   supportStreaming: true,
-  edgeRuntime: true,
 } satisfies Wrapper;

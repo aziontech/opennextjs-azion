@@ -74,6 +74,19 @@ const requestHandler = async (request: Request, env: AzionEnv, ctx: ExecutionCon
     }
     return env.ASSETS?.fetch(request);
   }
+
+  // - `Request`s are handled by the Next server
+  // @ts-expect-error: resolved by bundler build
+  const { handler: middlewareModule } = await import("./middleware/handler.mjs");
+  const reqOrResp = await middlewareModule(request, env, ctx).catch((e: Error) => {
+    console.error(e);
+    return new Response("Internal Server Error", { status: 500 });
+  });
+
+  if (reqOrResp instanceof Response) {
+    return reqOrResp;
+  }
+
   // @ts-expect-error: resolved by bundler build
   const { handler } = await import("./server-functions/default/handler.mjs");
 

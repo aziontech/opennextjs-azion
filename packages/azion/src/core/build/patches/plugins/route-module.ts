@@ -18,24 +18,19 @@ import { normalizePath } from "../../utils/index.js";
 export function patchRouteModules(updater: ContentUpdater, buildOpts: BuildOptions): Plugin {
   return updater.updateContent("route-module", [
     {
-      versions: ">=15.1.0",
-      field: {
-        filter: getCrossPlatformPathRegex(
-          String.raw`/next/dist/compiled/next-server/.*?\.runtime\.prod\.js$`,
-          {
-            escape: false,
-          }
-        ),
-        contentFilter: /getIncrementalCache\(/,
-        callback: async ({ contents }) => {
-          const { outputDir } = buildOpts;
+      filter: getCrossPlatformPathRegex(String.raw`/next/dist/compiled/next-server/.*?\.runtime\.prod\.js$`, {
+        escape: false,
+      }),
+      versions: ">=15.4.0",
+      contentFilter: /getIncrementalCache\(/,
+      callback: async ({ contents }) => {
+        const { outputDir } = buildOpts;
 
-          const outputPath = path.join(outputDir, "server-functions/default");
-          const cacheHandler = path.join(outputPath, getPackagePath(buildOpts), "cache.cjs");
-          contents = patchCode(contents, getIncrementalCacheRule(cacheHandler));
-          contents = patchCode(contents, forceTrustHostHeader);
-          return contents;
-        },
+        const outputPath = path.join(outputDir, "server-functions/default");
+        const cacheHandler = path.join(outputPath, getPackagePath(buildOpts), "cache.cjs");
+        contents = patchCode(contents, getIncrementalCacheRule(cacheHandler));
+        contents = patchCode(contents, forceTrustHostHeader);
+        return contents;
       },
     },
   ]);

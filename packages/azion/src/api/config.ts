@@ -6,6 +6,8 @@
 import { BaseOverride, LazyLoadedOverride, OpenNextConfig } from "@opennextjs/aws/types/open-next";
 import type { IncrementalCache, Queue, TagCache, Wrapper } from "@opennextjs/aws/types/overrides";
 
+import AzionWrapperEdge from "../core/overrides/wrapper/azion-wrapper-edge";
+
 export type Override<T extends BaseOverride> = "dummy" | T | LazyLoadedOverride<T>;
 
 /**
@@ -57,6 +59,18 @@ export function defineAzionConfig(config: AzionOverrides = {}): OpenNextConfig {
     },
     // node:crypto is used to compute cache keys and node:stream is used to wrapper
     edgeExternals: ["node:crypto", "node:stream"],
+    middleware: {
+      external: true,
+      override: {
+        // TODO: in the future move to the open-next aws package
+        wrapper: () => AzionWrapperEdge as Wrapper,
+        converter: "edge",
+        proxyExternalRequest: "fetch",
+        incrementalCache: resolveIncrementalCache(incrementalCache),
+        tagCache: resolveTagCache(tagCache),
+        queue: resolveQueue(queue),
+      },
+    },
   };
 }
 
