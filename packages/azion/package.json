@@ -1,7 +1,7 @@
 {
   "name": "@aziontech/opennextjs-azion",
   "description": "Azion builder for Next.js apps",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "type": "module",
   "scripts": {
     "clean": "rimraf dist",

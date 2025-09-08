@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 0.0.10
+
+### Patch Changes
+
+- [#29](https://github.com/aziontech/opennextjs-azion/pull/29) [`6fe65bb`](https://github.com/aziontech/opennextjs-azion/commit/6fe65bb1eb972b2536b8c81e576adc6a2835764b) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - fix: update support to next 15.4.x
+
 ## 0.0.9
 
 ### Patch Changes
