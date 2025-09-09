@@ -119,7 +119,7 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       // Apply updater updates, must be the last plugin
       updater.plugin,
     ] as Plugin[],
-    external: ["./middleware/handler.mjs"],
+    external: ["./middleware/handler.mjs", "async_hooks"],
     alias: {
       // Note: it looks like node-fetch is actually not necessary for us, so we could replace it with an empty shim
       //       but just to be safe we replace it with a module that re-exports the native fetch
@@ -173,7 +173,25 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
         globalThis.queueMicrotask = (callback) => {
           return Promise.resolve().then(callback);
         };
-      }`,
+      }
+      // temporary fix to avoid the following error on Next 15
+      import async_hooks from 'async_hooks';
+
+      // Implement snapshot for AsyncLocalStorage
+      if (async_hooks.AsyncLocalStorage && !async_hooks.AsyncLocalStorage.prototype.snapshot) {
+        async_hooks.AsyncLocalStorage.prototype.snapshot = function() {
+          const store = this.getStore();
+          return () => store;
+        };
+      }
+
+      // Also add snapshot as a static method if needed
+      if (async_hooks.AsyncLocalStorage && !async_hooks.AsyncLocalStorage.snapshot) {
+        async_hooks.AsyncLocalStorage.snapshot = () => {
+          return () => undefined;
+        };
+      }  
+      `,
     },
     platform: "node",
   });
