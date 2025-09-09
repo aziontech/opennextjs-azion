@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 0.0.11
+
+### Patch Changes
+
+- [#31](https://github.com/aziontech/opennextjs-azion/pull/31) [`26ac317`](https://github.com/aziontech/opennextjs-azion/commit/26ac317031167609afe1b73576a938da90b5e914) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - fix: implement AsyncLocalStorage.snapshot for Next.js 15 compatibility
+
 ## 0.0.10
 
 ### Patch Changes
