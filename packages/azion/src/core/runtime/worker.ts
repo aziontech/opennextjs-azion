@@ -78,10 +78,8 @@ const requestHandler = async (request: Request, env: AzionEnv, ctx: ExecutionCon
   // - `Request`s are handled by the Next server
   // @ts-expect-error: resolved by bundler build
   const { handler: middlewareModule } = await import("./middleware/handler.mjs");
-  const reqOrResp = await middlewareModule(request, env, ctx).catch((e: Error) => {
-    console.error(e);
-    return new Response("Internal Server Error", { status: 500 });
-  });
+  const cloneRequest = request.clone();
+  const reqOrResp = await middlewareModule(cloneRequest, env, ctx);
 
   if (reqOrResp instanceof Response) {
     return reqOrResp;
