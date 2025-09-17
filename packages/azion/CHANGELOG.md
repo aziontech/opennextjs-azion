@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 0.0.12
+
+### Patch Changes
+
+- [#33](https://github.com/aziontech/opennextjs-azion/pull/33) [`05a6b82`](https://github.com/aziontech/opennextjs-azion/commit/05a6b829294155119f1633329fd4f1488d5d6d9c) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - clone request before passing to middleware
+
 ## 0.0.11
 
 ### Patch Changes
