@@ -34,7 +34,7 @@ interface QueueMessage {
 
 ```mermaid
 graph TD
-    A[Revalidation Request] --> B[Memory Queue.send()]
+    A[Revalidation Request] --> B[Memory Queue Send]
     B --> C{Check Service Binding}
     C -->|Missing| D[Throw IgnorableError]
     C -->|Available| E{Check Deduplication}
