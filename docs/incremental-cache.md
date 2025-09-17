@@ -61,9 +61,9 @@ graph TD
     O -->|Yes| Q[Complete]
     P --> Q
 
-    style F fill:#90EE90
-    style I fill:#FFB6C1
-    style Q fill:#87CEEB
+    style F fill:#228B22
+    style I fill:#DC143C
+    style Q fill:#4682B4
 ```
 
 ## API Methods

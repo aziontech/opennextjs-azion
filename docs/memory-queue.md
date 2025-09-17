@@ -61,11 +61,11 @@ graph TD
     R --> S
     S --> T[Complete]
 
-    style D fill:#FFB6C1
-    style F fill:#DDA0DD
-    style P fill:#90EE90
-    style Q fill:#FFA07A
-    style R fill:#FFB6C1
+    style D fill:#DC143C
+    style F fill:#9932CC
+    style P fill:#228B22
+    style Q fill:#FF4500
+    style R fill:#DC143C
 ```
 
 ## API Methods

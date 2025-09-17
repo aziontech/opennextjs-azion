@@ -70,10 +70,10 @@ graph TD
     R --> S[Update Revalidations]
     S --> N
 
-    style I fill:#90EE90
-    style J fill:#FFB6C1
-    style Q fill:#87CEEB
-    style M fill:#DDA0DD
+    style I fill:#228B22
+    style J fill:#DC143C
+    style Q fill:#4682B4
+    style M fill:#9932CC
 ```
 
 ## API Methods
