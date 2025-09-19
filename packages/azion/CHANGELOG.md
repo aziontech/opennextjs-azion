@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 0.0.13
+
+### Patch Changes
+
+- [#36](https://github.com/aziontech/opennextjs-azion/pull/36) [`db73a36`](https://github.com/aziontech/opennextjs-azion/commit/db73a3662c45e0a227704c57d6a841d014d6f30d) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - fix: remove the Cache API layer to use only the Storage API
+
 ## 0.0.12
 
 ### Patch Changes
