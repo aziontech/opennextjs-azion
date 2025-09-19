@@ -7,7 +7,6 @@ import type { TagCache } from "@opennextjs/aws/types/overrides";
 import { IgnorableError } from "@opennextjs/aws/utils/error.js";
 
 import { getAzionContext } from "../../../api";
-import CacheApi from "../../../api/cache-api";
 import { debugCache, FALLBACK_BUILD_ID, NAME_FILE_TAG_MANIFEST } from "../internal.js";
 
 const CACHE_DIR = "data-cache/_next_cache";
@@ -35,48 +34,17 @@ const getTagManifestStorage = async (filePath: string): Promise<string> => {
   const decoder = new TextDecoder();
   const manifestContent = decoder.decode(fileValueArray);
   debugCache("StorageTagCache - Tags manifest HIT from storage");
-  // set the manifest content to be cache api because the first time is not setted
-  await CacheApi.putCacheAPIkey(
-    `${BUILD_ID}_${azionContext.env.AZION?.CACHE_API_STORAGE_NAME}`,
-    NAME_FILE_TAG_MANIFEST,
-    manifestContent
-  ).catch((e) => {
-    debugCache(`StorageTagCache - Error writing tags manifest to cache API: ${e.message}`);
-    return null;
-  });
-  debugCache("StorageTagCache - Tags manifest written to cache API");
   return manifestContent;
 };
 
-const getManifestCacheApiOrStorage = async (): Promise<string> => {
-  const azionContext = getAzionContext();
-  const cacheApiManifest = await CacheApi.getCacheAPI(
-    `${BUILD_ID}_${azionContext.env.AZION?.CACHE_API_STORAGE_NAME}`,
-    NAME_FILE_TAG_MANIFEST
-  ).catch((e) => {
-    debugCache(e.message);
-    return null;
-  });
-  if (cacheApiManifest) {
-    debugCache("StorageTagCache - Cache API HIT for tags manifest");
-    return cacheApiManifest;
-  }
-  debugCache("StorageTagCache - MISS for tags manifest, falling back to storage");
+const getManifestStorage = async (): Promise<string> => {
+  debugCache("StorageTagCache - Getting tags manifest from storage");
   return await getTagManifestStorage(NAME_FILE_TAG_MANIFEST);
 };
 
-const setManifestCacheApiOrStorage = async (manifest: TagsManifest): Promise<void> => {
+const setManifestStorage = async (manifest: TagsManifest): Promise<void> => {
   const azionContext = getAzionContext();
   const manifestString = JSON.stringify(manifest);
-  // Cache API PUT
-  await CacheApi.putCacheAPIkey(
-    `${BUILD_ID}_${azionContext.env.AZION?.CACHE_API_STORAGE_NAME}`,
-    NAME_FILE_TAG_MANIFEST,
-    manifestString
-  ).catch((e) => {
-    debugCache(e.message);
-    return null;
-  });
   // Storage PUT
   const encoder = new TextEncoder();
   const tagsBuffer = encoder.encode(manifestString);
@@ -97,7 +65,7 @@ const storageTagCache: TagCache = {
   mode: "original",
   getByPath: async (path: string) => {
     debugCache("StorageTagCache - getByPath", path);
-    const tagsManifest = await getManifestCacheApiOrStorage();
+    const tagsManifest = await getManifestStorage();
     const tagsParsed = JSON.parse(tagsManifest) as TagsManifest;
     const tags = tagsParsed?.items.filter((item) => item.path === getCacheKey(path));
     if (!tags || tags?.length === 0) {
@@ -109,7 +77,7 @@ const storageTagCache: TagCache = {
   },
   getByTag: async (tag: string) => {
     debugCache("StorageTagCache - getByTag", tag);
-    const tagsManifest = await getManifestCacheApiOrStorage();
+    const tagsManifest = await getManifestStorage();
     const tagsParsed = JSON.parse(tagsManifest) as TagsManifest;
     const tags = tagsParsed?.items.filter((item) => item.tag === getCacheKey(tag));
     if (!tags || tags?.length === 0) {
@@ -121,7 +89,7 @@ const storageTagCache: TagCache = {
   },
   getLastModified: async (key: string, lastModified: number) => {
     debugCache("StorageTagCache - getLastModified", key, lastModified);
-    const tagsManifest = await getManifestCacheApiOrStorage();
+    const tagsManifest = await getManifestStorage();
     const tagsParsed = JSON.parse(tagsManifest) as TagsManifest;
     const match = tagsParsed.revalidations?.find((reval) => {
       const tag = tagsParsed.items.find((t) => t.tag === reval.tag && t.path === getCacheKey(key));
@@ -138,7 +106,7 @@ const storageTagCache: TagCache = {
   writeTags: async (tags: { tag: string; path: string; revalidatedAt?: number }[]) => {
     debugCache("StorageTagCache - writeTags", JSON.stringify(tags));
     const uniqueTags = new Set<string>();
-    const tagsManifest = await getManifestCacheApiOrStorage();
+    const tagsManifest = await getManifestStorage();
     const tagsManifestParsed = JSON.parse(tagsManifest) as TagsManifest;
     const results = tags
       .map(({ tag, path, revalidatedAt }) => {
@@ -178,7 +146,7 @@ const storageTagCache: TagCache = {
         })
       );
 
-      return await setManifestCacheApiOrStorage(tagsManifestParsed);
+      return await setManifestStorage(tagsManifestParsed);
     }
     return;
   },
