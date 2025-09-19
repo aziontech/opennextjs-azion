@@ -6,18 +6,17 @@ The Azion Tag Cache is a custom implementation that manages cache tags for Next.
 
 ## Architecture
 
-The `StorageTagCache` implements the `TagCache` interface and provides tag-based cache management using Azion's dual-layer storage approach:
+The `StorageTagCache` implements the `TagCache` interface and provides tag-based cache management using Azion's Storage API:
 
-1. **Cache API**: Fast access to tag manifests for quick lookups
-2. **Storage API**: Persistent storage of tag manifests for durability
-3. **Tag Manifest**: Central registry mapping tags to paths and tracking revalidations
+1. **Storage API**: Persistent storage of tag manifests
+2. **Tag Manifest**: Central registry mapping tags to paths and tracking revalidations
 
 ## Key Features
 
 - **Tag-to-Path Mapping**: Associates cache tags with specific paths
 - **Path-to-Tag Lookup**: Finds all tags associated with a given path
 - **Revalidation Tracking**: Manages forced revalidation timestamps
-- **Dual-layer Storage**: Combines Cache API speed with Storage API persistence
+- **Storage-based Management**: Uses Azion's Storage API for persistent tag management
 - **Build-aware Tagging**: Incorporates build ID for proper cache isolation
 
 ## Tag Manifest Structure
@@ -47,33 +46,30 @@ graph TD
     B -->|getLastModified| E[Check Revalidation]
     B -->|writeTags| F[Write Tag Mappings]
 
-    C --> G[Load Tag Manifest]
+    C --> G[Load Tag Manifest from Storage]
     D --> G
     E --> G
     F --> G
 
-    G --> H{Try Cache API}
-    H -->|HIT| I[Return Manifest from Cache]
-    H -->|MISS| J[Load from Storage]
-    J --> K[Backfill Cache API]
-    K --> I
+    G --> H{Manifest Found?}
+    H -->|YES| I[Return Manifest]
+    H -->|NO| J[Return Empty Manifest]
 
-    I --> L{Process Operation}
-    L -->|Read| M[Filter & Return Results]
-    L -->|Write| N[Update Manifest]
+    I --> K{Process Operation}
+    K -->|Read| L[Filter & Return Results]
+    K -->|Write| M[Update Manifest]
 
-    N --> O[Write to Cache API]
-    O --> P[Write to Storage]
-    P --> Q[Operation Complete]
+    M --> N[Write to Storage]
+    N --> O[Operation Complete]
 
-    F --> R[Deduplicate Tags]
-    R --> S[Update Revalidations]
-    S --> N
+    F --> P[Deduplicate Tags]
+    P --> Q[Update Revalidations]
+    Q --> M
 
     style I fill:#228B22
     style J fill:#DC143C
-    style Q fill:#4682B4
-    style M fill:#9932CC
+    style O fill:#4682B4
+    style L fill:#9932CC
 ```
 
 ## API Methods
@@ -84,7 +80,7 @@ Retrieves all tags associated with a specific path.
 
 **Flow**:
 
-1. Loads tag manifest from Cache API or Storage
+1. Loads tag manifest from Storage
 2. Filters items matching the given path
 3. Returns array of tag names (with build ID prefix removed)
 
@@ -101,7 +97,7 @@ Retrieves all paths associated with a specific tag.
 
 **Flow**:
 
-1. Loads tag manifest from Cache API or Storage
+1. Loads tag manifest from Storage
 2. Filters items matching the given tag
 3. Returns array of path names (with build ID prefix removed)
 
@@ -118,7 +114,7 @@ Determines if a cache entry should be revalidated based on tag revalidation time
 
 **Flow**:
 
-1. Loads tag manifest and revalidations
+1. Loads tag manifest and revalidations from Storage
 2. Checks if any associated tags have been revalidated after the entry's last modified time
 3. Returns `-1` to force revalidation or the original timestamp
 
@@ -133,16 +129,16 @@ Updates tag mappings and revalidation timestamps.
 
 **Flow**:
 
-1. Loads current tag manifest
+1. Loads current tag manifest from Storage
 2. Deduplicates incoming tags
 3. Updates revalidations map with new timestamps
-4. Writes updated manifest to both Cache API and Storage
+4. Writes updated manifest to Storage
 
 **Features**:
 
 - **Deduplication**: Prevents duplicate tag entries
 - **Merge Strategy**: Updates existing revalidations or adds new ones
-- **Atomic Updates**: Ensures consistency across both storage layers
+- **Persistent Storage**: Ensures data durability in Azion's Storage API
 
 ## Storage Structure
 
@@ -173,18 +169,19 @@ This ensures:
 
 ### Loading Strategy
 
-The system implements a fallback loading strategy:
+The system loads tag manifests directly from Storage:
 
-1. **Primary**: Try Cache API for fast access
-2. **Fallback**: Load from Storage if Cache API misses
-3. **Backfill**: Populate Cache API when loading from Storage
+1. **Direct Access**: Load manifest from Azion's Storage API
+2. **Fallback**: Return empty manifest if file not found
+3. **Error Handling**: Graceful degradation on storage errors
 
 ### Writing Strategy
 
-Updates are written to both layers:
+Updates are written directly to Storage:
 
-1. **Cache API**: Immediate availability for fast access
-2. **Storage API**: Persistent storage with build metadata
+1. **Storage API**: Persistent storage with build metadata
+2. **Atomic Operations**: Ensures data consistency
+3. **Error Recovery**: Handles storage failures gracefully
 
 ## Revalidation System
 
@@ -209,7 +206,7 @@ return shouldRevalidate ? -1 : lastModified;
 The implementation uses robust error handling:
 
 - **Storage Errors**: Returns empty manifest `{items: []}` if file not found
-- **Cache API Errors**: Falls back to Storage API automatically
+- **Network Errors**: Handles Storage API connectivity issues gracefully
 - **Parse Errors**: Gracefully handles malformed JSON with debug logging
 
 ## Environment Configuration
@@ -217,7 +214,6 @@ The implementation uses robust error handling:
 Required environment variables and context:
 
 - **`NEXT_BUILD_ID`**: Build identifier for tag isolation
-- **`AZION.CACHE_API_STORAGE_NAME`**: Cache API storage identifier
 - **`AZION.BUCKET_PREFIX`**: Storage bucket prefix for manifest location
 - **`AZION.Storage`**: Storage API instance for persistent storage
 
@@ -250,33 +246,29 @@ if (lastModified === -1) {
 
 ## Performance Characteristics
 
-### Cache API Benefits
-
-- **Fast Lookups**: Memory-based access for tag manifest
-- **Edge Distribution**: Available across Azion's network
-- **Low Latency**: Immediate access to tag mappings
-
 ### Storage API Benefits
 
-- **Persistence**: Survives edge node restarts
+- **Persistence**: Survives edge node restarts and deployments
 - **Consistency**: Single source of truth for tag manifest
 - **Durability**: Reliable storage for tag relationships
+- **Scalability**: Handles large tag manifests efficiently
+- **Edge Distribution**: Available across Azion's global network
 
 ## Debug Information
 
 Enable detailed logging with `NEXT_PRIVATE_DEBUG_CACHE=1`:
 
-- Tag manifest load operations (Cache API vs Storage)
+- Tag manifest load operations from Storage
 - Tag filtering and mapping results
 - Revalidation decision logic
-- Write operations to both storage layers
+- Write operations to Storage API
 
 ## Best Practices
 
 1. **Tag Naming**: Use consistent, hierarchical tag naming (e.g., `category:electronics`)
 2. **Granular Tagging**: Tag at appropriate granularity for efficient invalidation
 3. **Revalidation Strategy**: Use targeted revalidation to minimize cache churn
-4. **Monitor Performance**: Track Cache API hit rates vs Storage fallbacks
+4. **Monitor Performance**: Track Storage API response times and error rates
 5. **Build Management**: Ensure proper build ID generation for tag isolation
 
 ## Common Use Cases
@@ -316,15 +308,15 @@ await tagCache.writeTags([
 
 ### Common Issues
 
-1. **Missing Tags**: Check tag manifest loading and Cache API connectivity
+1. **Missing Tags**: Check tag manifest loading and Storage API connectivity
 2. **Revalidation Not Working**: Verify timestamp comparison logic and tag associations
-3. **Performance Issues**: Monitor Cache API vs Storage access patterns
+3. **Performance Issues**: Monitor Storage API response times and error rates
 4. **Build Isolation**: Ensure consistent build ID across deployments
 
 ### Debug Steps
 
 1. Enable debug logging: `NEXT_PRIVATE_DEBUG_CACHE=1`
 2. Check tag manifest structure and content
-3. Verify Cache API and Storage API configuration
+3. Verify Storage API configuration and permissions
 4. Monitor revalidation timestamps and logic
 5. Validate tag-to-path mappings
