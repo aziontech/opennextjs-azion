@@ -1,5 +1,15 @@
 # @aziontech/opennextjs-azion
 
+## 1.0.0
+
+### Major Changes
+
+- [#38](https://github.com/aziontech/opennextjs-azion/pull/38) [`0a04351`](https://github.com/aziontech/opennextjs-azion/commit/0a043514029550cb6149fe33bd70f67ccee50f84) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - v1.0.0 - First Major Release (Unstable)
+
+  Initial unstable release of OpenNext.js for Azion
+
+  This marks the first major version of @aziontech/opennextjs-azion, an adapter that enables deployment of Next.js applications to Azion's platform.
+
 ## 0.0.13
 
 ### Patch Changes
