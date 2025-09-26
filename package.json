@@ -23,5 +23,9 @@
     "code:checks": "pnpm prettier:check && pnpm lint:check && pnpm ts:check",
     "install-playwright": "playwright install --with-deps",
     "postinstall": "pnpm --filter @aziontech/opennextjs-azion build"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "pnpm": ">=9.0.0"
   }
 }
