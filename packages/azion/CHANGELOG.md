@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 1.0.1
+
+### Patch Changes
+
+- [#41](https://github.com/aziontech/opennextjs-azion/pull/41) [`19e545e`](https://github.com/aziontech/opennextjs-azion/commit/19e545eeab2acc74dffed44eab40b66777a7062b) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - fix: runtime worker to correctly pass and control route preloading
+
 ## 1.0.0
 
 ### Major Changes
