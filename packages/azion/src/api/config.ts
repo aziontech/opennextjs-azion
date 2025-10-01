@@ -3,7 +3,12 @@
  * Significant changes have been made to adapt it for use with Azion.
  */
 
-import { BaseOverride, LazyLoadedOverride, OpenNextConfig } from "@opennextjs/aws/types/open-next";
+import {
+  BaseOverride,
+  LazyLoadedOverride,
+  OpenNextConfig,
+  type RoutePreloadingBehavior,
+} from "@opennextjs/aws/types/open-next";
 import type { IncrementalCache, Queue, TagCache, Wrapper } from "@opennextjs/aws/types/overrides";
 
 import AzionWrapperEdge from "../core/overrides/wrapper/azion-wrapper-edge";
@@ -35,6 +40,13 @@ export type AzionOverrides = {
    * Sets the wrapper implementation.
    */
   wrapper?: Override<Wrapper>;
+
+  /**
+   * Route preloading behavior.
+   * Using a value other than "none" can result in higher CPU usage on cold starts.
+   * @default "none"
+   */
+  routePreloadingBehavior?: RoutePreloadingBehavior;
 };
 
 /**
@@ -44,7 +56,7 @@ export type AzionOverrides = {
  * @returns the OpenNext configuration object
  */
 export function defineAzionConfig(config: AzionOverrides = {}): OpenNextConfig {
-  const { incrementalCache, tagCache, queue, wrapper } = config;
+  const { incrementalCache, tagCache, queue, wrapper, routePreloadingBehavior } = config;
 
   return {
     default: {
@@ -56,6 +68,7 @@ export function defineAzionConfig(config: AzionOverrides = {}): OpenNextConfig {
         tagCache: resolveTagCache(tagCache),
         queue: resolveQueue(queue),
       },
+      routePreloadingBehavior,
     },
     // node:crypto is used to compute cache keys and node:stream is used to wrapper
     edgeExternals: ["node:crypto", "node:stream"],

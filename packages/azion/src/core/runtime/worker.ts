@@ -88,7 +88,7 @@ const requestHandler = async (request: Request, env: AzionEnv, ctx: ExecutionCon
   // @ts-expect-error: resolved by bundler build
   const { handler } = await import("./server-functions/default/handler.mjs");
 
-  return handler(request, env, ctx);
+  return handler(reqOrResp, env, ctx);
 };
 
 const getStorageAsset = async (request: Request | URL) => {
