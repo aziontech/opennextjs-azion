@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 1.1.0
+
+### Minor Changes
+
+- [#43](https://github.com/aziontech/opennextjs-azion/pull/43) [`383c82c`](https://github.com/aziontech/opennextjs-azion/commit/383c82c001bf9d8aff284f321a4ab638674fcfd1) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - feat: add environment variable to bypass interactive prompts during build
+
 ## 1.0.1
 
 ### Patch Changes
