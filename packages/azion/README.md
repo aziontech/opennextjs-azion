@@ -75,3 +75,55 @@ To deploy your application to Azion using the Azion CLI, follow these steps:
    ```bash
    azion deploy --skip-build --local
    ```
+
+## Environment Variables
+
+The following environment variables can be used to customize the behavior of OpenNext for Azion:
+
+### `OPEN_NEXTJS_NO_INTERACTIVE_PROMPT`
+
+Controls whether interactive prompts are shown during the build process.
+
+- **Default**: `undefined` (prompts are shown)
+- **Values**:
+  - `"true"`: Automatically creates required configuration files without prompting
+  - Any other value or unset: Shows interactive prompts (default behavior)
+
+**Usage in CI/CD environments:**
+
+```bash
+# Automatically create config files without user interaction
+OPEN_NEXTJS_NO_INTERACTIVE_PROMPT=true azion build --preset opennextjs
+```
+
+**Or add to your `.env` file:**
+
+```env
+OPEN_NEXTJS_NO_INTERACTIVE_PROMPT=true
+```
+
+This is particularly useful for remote builds, CI/CD pipelines, and automated deployments where user interaction is not possible.
+
+### `NEXT_PRIVATE_DEBUG_CACHE`
+
+Enables detailed cache debugging logs for troubleshooting cache-related issues.
+
+- **Default**: `undefined` (no debug logs)
+- **Values**:
+  - `"true"`: Enables detailed cache operation logs
+  - Any other value or unset: Normal logging (default behavior)
+
+**Usage for debugging:**
+
+```bash
+# Enable cache debugging
+NEXT_PRIVATE_DEBUG_CACHE=true azion build --preset opennextjs
+```
+
+**Or add to your `.env` file:**
+
+```env
+NEXT_PRIVATE_DEBUG_CACHE=true
+```
+
+This will show detailed information about cache operations, including cache keys, storage operations, and any cache-related errors.
