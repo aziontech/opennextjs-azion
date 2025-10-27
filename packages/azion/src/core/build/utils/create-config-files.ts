@@ -13,7 +13,7 @@ import { getPackageRuntimeDirPath } from "../../utils/get-package-runtime-dir-pa
  *
  * @param sourceDir The source directory for the project
  */
-export async function createOpenNextConfigIfNotExistent(sourceDir: string): Promise<void> {
+export async function createOpenNextConfigIfNotExistent(sourceDir: string): Promise<string> {
   const openNextConfigPath = join(sourceDir, "open-next.config.ts");
 
   if (!existsSync(openNextConfigPath)) {
@@ -40,4 +40,5 @@ export async function createOpenNextConfigIfNotExistent(sourceDir: string): Prom
 
     console.log("✅ Created `open-next.config.ts` file successfully.");
   }
+  return openNextConfigPath;
 }
