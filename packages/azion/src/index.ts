@@ -8,6 +8,7 @@ import path from "node:path";
 
 import { compileOpenNextConfig } from "@opennextjs/aws/build/compileConfig.js";
 import { normalizeOptions } from "@opennextjs/aws/build/helper.js";
+import * as buildHelper from "@opennextjs/aws/build/helper.js";
 import { printHeader, showWarningOnWindows } from "@opennextjs/aws/build/utils.js";
 import logger from "@opennextjs/aws/logger.js";
 
@@ -18,7 +19,6 @@ import { populateAssets } from "./cli/commands/populate-assets.js";
 import { populateCache } from "./cli/commands/populate-cache.js";
 import { preview } from "./cli/commands/preview.js";
 import { createOpenNextConfigIfNotExistent, ensureAzionConfig } from "./core/build/utils/index.js";
-import * as buildHelper from "@opennextjs/aws/build/helper.js";
 
 const nextAppDir = process.cwd();
 
