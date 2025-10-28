@@ -77,7 +77,7 @@ function makeBuildCommand(packager: string, isNext16OrHigher: boolean) {
   return ["bun", "npm"].includes(packager)
     ? `${packager} run build -- --webpack`
     : // yarn
-      ["yarn"].includes(packager)
+      ["yarn", "pnpm"].includes(packager)
       ? `${packager} build --webpack`
       : `${packager} build -- --webpack`;
 }
