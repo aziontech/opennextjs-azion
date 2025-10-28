@@ -127,3 +127,37 @@ NEXT_PRIVATE_DEBUG_CACHE=true
 ```
 
 This will show detailed information about cache operations, including cache keys, storage operations, and any cache-related errors.
+
+## Turbopack Support (Next.js 16+)
+
+**OpenNext for Azion currently does not support Turbopack.** We automatically force the use of webpack by adding the `--webpack` flag to the `next build` command during the build process.
+
+### What is Turbopack?
+
+Turbopack offers faster build times, OpenNext for Azion requires webpack-specific optimizations and transformations that are not yet compatible with Turbopack's architecture.
+
+### Automatic Webpack Enforcement
+
+When you run `npx opennextjs-azion build`, we automatically:
+
+- Add the `--webpack` flag to the `next build` command
+- Ensure your application is built using webpack instead of Turbopack
+- Apply all necessary transformations for Azion deployment
+
+### Troubleshooting Turbopack-related Issues
+
+If you encounter errors like:
+
+```text
+✘ [ERROR] ⨯ Error: Failed to load chunk server/chunks/ssr/<chunk_name>.js
+```
+
+This typically indicates that Turbopack was used during the build process. OpenNext for Azion handles this automatically, but if you're manually running `next build` commands, make sure to use:
+
+```bash
+# ✅ Correct - uses webpack
+next build
+
+# ❌ Incorrect - uses Turbopack (not supported)
+next build --turbo
+```

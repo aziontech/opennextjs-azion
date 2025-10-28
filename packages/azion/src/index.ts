@@ -18,6 +18,7 @@ import { populateAssets } from "./cli/commands/populate-assets.js";
 import { populateCache } from "./cli/commands/populate-cache.js";
 import { preview } from "./cli/commands/preview.js";
 import { createOpenNextConfigIfNotExistent, ensureAzionConfig } from "./core/build/utils/index.js";
+import * as buildHelper from "@opennextjs/aws/build/helper.js";
 
 const nextAppDir = process.cwd();
 
@@ -40,6 +41,10 @@ async function runCommand(args: Arguments) {
   // Initialize options
   const options = normalizeOptions(config, openNextDistDir, buildDir);
   logger.setLevel(options.debug ? "debug" : "info");
+  // Turbopack is not supported for build at the moment, so we disable it
+  const nextVersion = buildHelper.getNextVersion(baseDir);
+  const isNext16OrHigher = buildHelper.compareSemver(nextVersion, ">=", "16");
+  config.buildCommand = makeBuildCommand(options.packager, isNext16OrHigher);
 
   switch (args.command) {
     case "build":
@@ -56,6 +61,25 @@ async function runCommand(args: Arguments) {
     case "populateAssets":
       return populateAssets(options, args);
   }
+}
+
+/**
+ * Creates the build command for the given packager.
+ * This is a temporary fix to avoid the following error on Next 16 or Build with TURBOPACK
+ * turbopack builds are not suported for build at the moment, so we disable it
+ * @param packager
+ * @returns
+ */
+function makeBuildCommand(packager: string, isNext16OrHigher: boolean) {
+  if (!isNext16OrHigher) {
+    return;
+  }
+  return ["bun", "npm"].includes(packager)
+    ? `${packager} run build -- --webpack`
+    : // yarn
+      ["yarn"].includes(packager)
+      ? `${packager} build --webpack`
+      : `${packager} build -- --webpack`;
 }
 
 await runCommand(getArgs());
