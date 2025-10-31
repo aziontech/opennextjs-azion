@@ -8,6 +8,7 @@ import path from "node:path";
 
 import { compileOpenNextConfig } from "@opennextjs/aws/build/compileConfig.js";
 import { normalizeOptions } from "@opennextjs/aws/build/helper.js";
+import * as buildHelper from "@opennextjs/aws/build/helper.js";
 import { printHeader, showWarningOnWindows } from "@opennextjs/aws/build/utils.js";
 import logger from "@opennextjs/aws/logger.js";
 
@@ -30,8 +31,8 @@ async function runCommand(args: Arguments) {
   const require = createRequire(import.meta.url);
   const openNextDistDir = path.dirname(require.resolve("@opennextjs/aws/index.js"));
 
-  await createOpenNextConfigIfNotExistent(baseDir);
-  const { config, buildDir } = await compileOpenNextConfig(baseDir, undefined, {
+  const configPath = await createOpenNextConfigIfNotExistent(baseDir);
+  const { config, buildDir } = await compileOpenNextConfig(configPath, {
     compileEdge: true,
   });
 
@@ -40,6 +41,10 @@ async function runCommand(args: Arguments) {
   // Initialize options
   const options = normalizeOptions(config, openNextDistDir, buildDir);
   logger.setLevel(options.debug ? "debug" : "info");
+  // Turbopack is not supported for build at the moment, so we disable it
+  const nextVersion = buildHelper.getNextVersion(baseDir);
+  const isNext16OrHigher = buildHelper.compareSemver(nextVersion, ">=", "16");
+  config.buildCommand = makeBuildCommand(options.packager, isNext16OrHigher);
 
   switch (args.command) {
     case "build":
@@ -56,6 +61,25 @@ async function runCommand(args: Arguments) {
     case "populateAssets":
       return populateAssets(options, args);
   }
+}
+
+/**
+ * Creates the build command for the given packager.
+ * This is a temporary fix to avoid the following error on Next 16 or Build with TURBOPACK
+ * turbopack builds are not suported for build at the moment, so we disable it
+ * @param packager
+ * @returns
+ */
+function makeBuildCommand(packager: string, isNext16OrHigher: boolean) {
+  if (!isNext16OrHigher) {
+    return;
+  }
+  return ["bun", "npm"].includes(packager)
+    ? `${packager} run build -- --webpack`
+    : // yarn
+      ["yarn", "pnpm"].includes(packager)
+      ? `${packager} build --webpack`
+      : `${packager} build -- --webpack`;
 }
 
 await runCommand(getArgs());
