@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 1.1.1
+
+### Patch Changes
+
+- [#47](https://github.com/aziontech/opennextjs-azion/pull/47) [`8ae3365`](https://github.com/aziontech/opennextjs-azion/commit/8ae33654c0b7d5c7d1b4889a2af79960db8121d3) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - fix: enforce webpack build by disabling Turbopack support in Next.js 16+
+
 ## 1.1.0
 
 ### Minor Changes
