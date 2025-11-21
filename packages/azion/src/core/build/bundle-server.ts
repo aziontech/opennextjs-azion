@@ -174,23 +174,6 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
           return Promise.resolve().then(callback);
         };
       }
-      // temporary fix to avoid the following error on Next 15
-      import async_hooks from 'async_hooks';
-
-      // Implement snapshot for AsyncLocalStorage
-      if (async_hooks.AsyncLocalStorage && !async_hooks.AsyncLocalStorage.prototype.snapshot) {
-        async_hooks.AsyncLocalStorage.prototype.snapshot = function() {
-          const store = this.getStore();
-          return () => store;
-        };
-      }
-
-      // Also add snapshot as a static method if needed
-      if (async_hooks.AsyncLocalStorage && !async_hooks.AsyncLocalStorage.snapshot) {
-        async_hooks.AsyncLocalStorage.snapshot = () => {
-          return () => undefined;
-        };
-      }  
       `,
     },
     platform: "node",
