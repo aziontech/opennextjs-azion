@@ -12,6 +12,33 @@ import { debugCache, FALLBACK_BUILD_ID, NAME_FILE_TAG_MANIFEST } from "../intern
 const CACHE_DIR = "data-cache/_next_cache";
 const BUILD_ID = process.env.NEXT_BUILD_ID ?? FALLBACK_BUILD_ID;
 
+// Simple in-memory lock to prevent concurrent writes to the same manifest
+const manifestLocks = new Map<string, Promise<void>>();
+
+async function withLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  // Wait for any existing operation on this key
+  if (manifestLocks.has(key)) {
+    debugCache(`StorageTagCache - Waiting for lock on ${key}`);
+    await manifestLocks.get(key);
+  }
+
+  // Create a new lock
+  debugCache(`StorageTagCache - Acquired lock on ${key}`);
+  let releaseLock: () => void;
+  const lockPromise = new Promise<void>((resolve) => {
+    releaseLock = resolve;
+  });
+  manifestLocks.set(key, lockPromise);
+
+  try {
+    return await fn();
+  } finally {
+    manifestLocks.delete(key);
+    releaseLock!();
+    debugCache(`StorageTagCache - Released lock on ${key}`);
+  }
+}
+
 type TagsManifest = {
   items: { tag: string; path: string }[];
   revalidations?: { tag: string; path: string; revalidatedAt?: number }[];
@@ -105,50 +132,53 @@ const storageTagCache: TagCache = {
   },
   writeTags: async (tags: { tag: string; path: string; revalidatedAt?: number }[]) => {
     debugCache("StorageTagCache - writeTags", JSON.stringify(tags));
-    const uniqueTags = new Set<string>();
-    const tagsManifest = await getManifestStorage();
-    const tagsManifestParsed = JSON.parse(tagsManifest) as TagsManifest;
-    const results = tags
-      .map(({ tag, path, revalidatedAt }) => {
-        const tagPath = getCacheKey(tag);
-        const tagsPath = getCacheKey(path);
-        if (!uniqueTags.has(tag) && revalidatedAt !== -1) {
-          uniqueTags.add(tag);
-          return {
-            tag: tagPath,
-            path: tagsPath,
-            revalidatedAt: revalidatedAt ?? Date.now(),
-          };
-        }
-        return null;
-      })
-      .filter((st) => !!st);
 
-    if (results.length >= 0) {
-      // Updates only the items from results in tagsManifestParsed.revalidations
-      tagsManifestParsed.revalidations = tagsManifestParsed.revalidations || [];
-      const revalidationsMap = new Map(
-        tagsManifestParsed.revalidations.map((r) => [`${r.tag}|${r.path}`, r])
-      );
-      results.forEach((item) => {
-        if (!item) return;
-        revalidationsMap.set(`${item.tag}|${item.path}`, {
-          tag: item.tag,
-          path: item.path,
-          revalidatedAt: item.revalidatedAt,
-        });
-      });
-      tagsManifestParsed.revalidations = Array.from(revalidationsMap.values()).map(
-        ({ tag, path, revalidatedAt }) => ({
-          tag,
-          path,
-          ...(typeof revalidatedAt === "number" ? { revalidatedAt } : {}),
+    return withLock(NAME_FILE_TAG_MANIFEST, async () => {
+      const uniqueTags = new Set<string>();
+      const tagsManifest = await getManifestStorage();
+      const tagsManifestParsed = JSON.parse(tagsManifest) as TagsManifest;
+      const results = tags
+        .map(({ tag, path, revalidatedAt }) => {
+          const tagPath = getCacheKey(tag);
+          const tagsPath = getCacheKey(path);
+          if (!uniqueTags.has(tag) && revalidatedAt !== -1) {
+            uniqueTags.add(tag);
+            return {
+              tag: tagPath,
+              path: tagsPath,
+              revalidatedAt: revalidatedAt ?? Date.now(),
+            };
+          }
+          return null;
         })
-      );
+        .filter((st) => !!st);
 
-      return await setManifestStorage(tagsManifestParsed);
-    }
-    return;
+      if (results.length >= 0) {
+        // Updates only the items from results in tagsManifestParsed.revalidations
+        tagsManifestParsed.revalidations = tagsManifestParsed.revalidations || [];
+        const revalidationsMap = new Map(
+          tagsManifestParsed.revalidations.map((r) => [`${r.tag}|${r.path}`, r])
+        );
+        results.forEach((item) => {
+          if (!item) return;
+          revalidationsMap.set(`${item.tag}|${item.path}`, {
+            tag: item.tag,
+            path: item.path,
+            revalidatedAt: item.revalidatedAt,
+          });
+        });
+        tagsManifestParsed.revalidations = Array.from(revalidationsMap.values()).map(
+          ({ tag, path, revalidatedAt }) => ({
+            tag,
+            path,
+            ...(typeof revalidatedAt === "number" ? { revalidatedAt } : {}),
+          })
+        );
+
+        return await setManifestStorage(tagsManifestParsed);
+      }
+      return;
+    });
   },
 };
 
