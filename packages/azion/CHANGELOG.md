@@ -1,5 +1,14 @@
 # @aziontech/opennextjs-azion
 
+## 1.1.2
+
+### Patch Changes
+
+- [#53](https://github.com/aziontech/opennextjs-azion/pull/53) [`e1a5f17`](https://github.com/aziontech/opennextjs-azion/commit/e1a5f174f4687c61b1e675ff8915bb59ad7c39f2) Thanks [@jcbsfilho](https://github.com/jcbsfilho)! - fix: add in-memory locking mechanism to prevent concurrent manifest writes in tag cache
+  chore: upgrade @opennextjs/aws from 3.8.5 to 3.9.0
+  fix: remove temporary AsyncLocalStorage snapshot patches for Next.js 15
+  docs: add release workflow documentation with mermaid diagram
+
 ## 1.1.1
 
 ### Patch Changes
