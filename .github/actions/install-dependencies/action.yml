@@ -1,5 +1,9 @@
 name: "Install Dependencies"
 description: "Install dependencies, fetching from cache when possible"
+inputs:
+  node-version:
+    description: the version of Node.js to install
+    default: 20.18.0
 
 runs:
   using: "composite"
@@ -7,10 +11,10 @@ runs:
     - name: Install pnpm
       uses: pnpm/action-setup@v4
 
-    - name: Install Node.js
+    - name: Install Node.js ${{ inputs.node-version }}
       uses: actions/setup-node@v4
       with:
-        node-version: 20.18.0
+        node-version: ${{ inputs.node-version }}
         cache: "pnpm"
         registry-url: "https://registry.npmjs.org"
 
