@@ -19,6 +19,8 @@ jobs:
 
       - name: Install Dependencies
         uses: ./.github/actions/install-dependencies
+        with:
+          node-version: 24
 
       - name: ${{ matrix.script }}
         run: pnpm run ${{ matrix.script }}

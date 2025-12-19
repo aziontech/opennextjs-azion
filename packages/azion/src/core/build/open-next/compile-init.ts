@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { loadConfig } from "@opennextjs/aws/adapters/config/util.js";
-import type { BuildOptions } from "@opennextjs/aws/build/helper";
+import type { BuildOptions } from "@opennextjs/aws/build/helper.js";
 import { build } from "esbuild";
 
 /**

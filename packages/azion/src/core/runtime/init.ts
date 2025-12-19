@@ -137,12 +137,9 @@ export function populateProcessEnv(url: URL, env: AzionEnv) {
 
 declare global {
   // Build timestamp
-  // eslint-disable-next-line no-var
   var __BUILD_TIMESTAMP_MS__: number;
   // Next basePath
-  // eslint-disable-next-line no-var
   var __NEXT_BASE_PATH__: string;
   // Deployment ID
-  // eslint-disable-next-line no-var
   var __DEPLOYMENT_ID__: string;
 }

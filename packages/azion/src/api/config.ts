@@ -8,10 +8,10 @@ import {
   LazyLoadedOverride,
   OpenNextConfig,
   type RoutePreloadingBehavior,
-} from "@opennextjs/aws/types/open-next";
-import type { IncrementalCache, Queue, TagCache, Wrapper } from "@opennextjs/aws/types/overrides";
+} from "@opennextjs/aws/types/open-next.js";
+import type { IncrementalCache, Queue, TagCache, Wrapper } from "@opennextjs/aws/types/overrides.js";
 
-import AzionWrapperEdge from "../core/overrides/wrapper/azion-wrapper-edge";
+import AzionWrapperEdge from "../core/overrides/wrapper/azion-wrapper-edge.js";
 
 export type Override<T extends BaseOverride> = "dummy" | T | LazyLoadedOverride<T>;
 
