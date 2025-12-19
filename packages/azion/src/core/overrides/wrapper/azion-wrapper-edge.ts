@@ -1,5 +1,5 @@
-import type { InternalEvent, InternalResult, MiddlewareResult } from "@opennextjs/aws/types/open-next";
-import type { Wrapper, WrapperHandler } from "@opennextjs/aws/types/overrides";
+import type { InternalEvent, InternalResult, MiddlewareResult } from "@opennextjs/aws/types/open-next.js";
+import type { Wrapper, WrapperHandler } from "@opennextjs/aws/types/overrides.js";
 
 const azPropNameMapping: Record<string, string | [(s: string) => string, string]> = {
   // The city name is percent-encoded.

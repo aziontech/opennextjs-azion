@@ -3,10 +3,10 @@
  * Significant changes have been made to adapt it for use with Azion.
  */
 
-import type { TagCache } from "@opennextjs/aws/types/overrides";
+import type { TagCache } from "@opennextjs/aws/types/overrides.js";
 import { IgnorableError } from "@opennextjs/aws/utils/error.js";
 
-import { getAzionContext } from "../../../api";
+import { getAzionContext } from "../../../api/index.js";
 import { debugCache, FALLBACK_BUILD_ID, NAME_FILE_TAG_MANIFEST } from "../internal.js";
 
 const CACHE_DIR = "data-cache/_next_cache";
