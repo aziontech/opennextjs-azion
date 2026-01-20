@@ -7,6 +7,9 @@ on:
 
 jobs:
   release:
+    permissions:
+      contents: write
+      pull-requests: write
     if: ${{ github.repository_owner == 'aziontech' }} # TODO: change to org opennextjs when ready
     name: Publish builder package
     runs-on: ubuntu-latest
