@@ -198,7 +198,7 @@ async function generateBundle(
     // OpenNext specific patches
     awsPatches.patchUseCacheForISR,
     awsPatches.patchNextServer,
-    awsPatches.patchEnvVars,
+    awsPatches.getEnvVarsPatch(options),
     awsPatches.patchBackgroundRevalidation,
     // Azion specific patches
     patchFetchCacheSetMissingWaitUntil,
