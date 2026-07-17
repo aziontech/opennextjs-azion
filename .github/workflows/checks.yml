@@ -5,6 +5,9 @@ on:
     branches: [main, experimental]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   checks:
     permissions:
@@ -18,7 +21,7 @@ jobs:
         script: ["prettier:check", "lint:check", "ts:check", "test"]
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install Dependencies
         uses: ./.github/actions/install-dependencies
