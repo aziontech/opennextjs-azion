@@ -2,9 +2,9 @@ name: OSSF Scorecard
 
 on:
   pull_request:
-    branches: ['main']
+    branches: ["main"]
   schedule:
-    - cron: '0 6 * * 1' # weekly measurement on the default branch
+    - cron: "0 6 * * 1" # weekly measurement on the default branch
   workflow_dispatch:
 
 permissions: {}
@@ -16,8 +16,8 @@ jobs:
     permissions:
       contents: read
     env:
-      THRESHOLD: '8'
-      MODE: 'warn'
+      THRESHOLD: "8"
+      MODE: "warn"
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -45,4 +45,3 @@ jobs:
               echo "::warning::OSSF ${SCORE} < ${THRESHOLD} — warn mode, not blocking"
             fi
           fi
-
