@@ -73,7 +73,7 @@
   "homepage": "https://github.com/aziontech/opennextjs-azion",
   "dependencies": {
     "@dotenvx/dotenvx": "catalog:",
-    "@opennextjs/aws": "3.9.11",
+    "@opennextjs/aws": "4.1.0",
     "enquirer": "^2.4.1",
     "glob": "catalog:",
     "prettier": "3.3.3",
@@ -86,7 +86,6 @@
     "@types/node": "catalog:",
     "esbuild": "catalog:",
     "eslint": "catalog:",
-    "eslint-plugin-import": "catalog:",
     "eslint-plugin-simple-import-sort": "catalog:",
     "eslint-plugin-unicorn": "catalog:",
     "globals": "catalog:",
@@ -96,5 +95,8 @@
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
     "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "next": ">=15.5.21 <16 || >=16.2.11"
   }
 }

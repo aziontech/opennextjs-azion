@@ -22,6 +22,7 @@ class CacheApi {
       return null;
     } catch (e) {
       debugCache("Get CacheApi error:", (e as any).message);
+      // eslint-disable-next-line preserve-caught-error -- keep the original error out of production logs; see debugCache above for details
       throw new Error("CacheApi not available or problem with getting cache API");
     }
   }
@@ -40,6 +41,7 @@ class CacheApi {
       debugCache("CacheApi - PUT for key:", key);
     } catch (e) {
       debugCache("Put CacheApi error:", (e as any).message);
+      // eslint-disable-next-line preserve-caught-error -- keep the original error out of production logs; see debugCache above for details
       throw new Error("CacheApi not available or problem with putting cache API");
     }
   }
@@ -56,6 +58,7 @@ class CacheApi {
       return cache.delete(request);
     } catch (e) {
       debugCache("Delete CacheApi error:", e);
+      // eslint-disable-next-line preserve-caught-error -- keep the original error out of production logs; see debugCache above for details
       throw new Error("CacheApi not available or problem with deleting cache API");
     }
   }
