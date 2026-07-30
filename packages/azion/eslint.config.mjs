@@ -1,5 +1,4 @@
 import pluginJs from "@eslint/js";
-import importPlugin from "eslint-plugin-import";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import eslintPluginUnicorn from "eslint-plugin-unicorn";
 import globals from "globals";
@@ -24,22 +23,12 @@ export default [
     plugins: {
       unicorn: eslintPluginUnicorn,
       "simple-import-sort": simpleImportSort,
-      import: importPlugin,
     },
     rules: {
       "@typescript-eslint/ban-ts-comment": "off",
       "unicorn/prefer-node-protocol": "error",
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
-      "import/first": "error",
-      "import/newline-after-import": "error",
-      "import/no-duplicates": "error",
-    },
-  },
-  {
-    files: ["src/**/*.ts"],
-    rules: {
-      "import/extensions": ["error", "always", { checkTypeImports: true }],
     },
   },
 ];
