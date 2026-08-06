@@ -17,6 +17,7 @@ import { bundleServer } from "../../core/build/bundle-server.js";
 import { compileEnvFiles } from "../../core/build/open-next/compile-env-files.js";
 import { compileInit } from "../../core/build/open-next/compile-init.js";
 import { createServerBundle } from "../../core/build/open-next/createServerBundle.js";
+import { updateMiddlewareBundledCode } from "../../core/build/patches/plugins/patch-rewrite-router.js";
 import { getVersion } from "../../core/build/utils/version.js";
 import type { ProjectOptions } from "../../core/project-options.js";
 
@@ -71,6 +72,7 @@ export async function build(
 
   // Compile middleware
   await createMiddleware(options, { forceOnlyBuildOnce: true });
+  await updateMiddlewareBundledCode(options);
 
   createStaticAssets(options);
 
