@@ -129,6 +129,10 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       //       we do this to both save on bundle size (there isn't really any benefit in us shipping the node-fetch code)
       //       and also get rid of a warning in the terminal caused by the package (because it performs an === comparison with -0)
       "next/dist/compiled/node-fetch": path.join(buildOpts.outputDir, "azion-runtime/shims/fetch.js"),
+      // App code (e.g. via `cross-fetch`/`graphql-request`) may import the real `node-fetch` package
+      // directly. Its Node-only body streaming (`.pipe()` on the request) isn't supported by the
+      // edge runtime, so we redirect it to the same native-`fetch` shim used for Next's vendored copy.
+      "node-fetch": path.join(buildOpts.outputDir, "azion-runtime/shims/fetch.js"),
       // Note: we apply an empty shim to next/dist/compiled/ws because it generates two `eval`s:
       //   eval("require")("bufferutil");
       //   eval("require")("utf-8-validate");
