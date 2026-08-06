@@ -25,6 +25,7 @@ import { patchNodeEnvironment } from "./patches/plugins/node-environment.js";
 import { handleOptionalDependencies } from "./patches/plugins/optional-deps.js";
 import { patchPagesRouterContext } from "./patches/plugins/pages-router-context.js";
 import { patchDepdDeprecations } from "./patches/plugins/patch-depd-deprecations.js";
+import { inlinePatchRenderUrl } from "./patches/plugins/patch-render-url.js";
 import {
   inlinePatchRewriteInvokeHeaders,
   inlinePatchRewriteURLSource,
@@ -116,6 +117,8 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       inlinePatchRewriteInvokeHeaders(updater),
       inlinePatchRewriteURLSource(updater),
       patchNodeEnvironment(updater),
+      inlinePatchRenderUrl(updater),
+
       // Apply updater updates, must be the last plugin
       updater.plugin,
     ] as Plugin[],
