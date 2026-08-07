@@ -150,6 +150,7 @@ If you encounter errors like:
 
 ```text
 ✘ [ERROR] ⨯ Error: Failed to load chunk server/chunks/ssr/<chunk_name>.js
+
 ```
 
 This typically indicates that Turbopack was used during the build process. OpenNext for Azion handles this automatically, but if you're manually running `next build` commands, make sure to use:
