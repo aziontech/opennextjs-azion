@@ -3,11 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "devDependencies": {
-    "@changesets/changelog-github": "^0.5.0",
+    "@changesets/changelog-github": "^0.7.0",
     "@changesets/cli": "^2.31.1",
     "@playwright/test": "catalog:",
-    "pkg-pr-new": "^0.0.80",
-    "prettier": "3.3.3"
+    "pkg-pr-new": "^0.0.87",
+    "prettier": "3.9.6"
   },
   "scripts": {
     "fix": "pnpm prettier:fix && pnpm lint:fix",
