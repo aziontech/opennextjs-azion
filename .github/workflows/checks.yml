@@ -10,9 +10,6 @@ permissions:
 
 jobs:
   checks:
-    permissions:
-      contents: write
-      pull-requests: write
     name: ${{ matrix.script }}
     runs-on: ubuntu-latest
     strategy:
