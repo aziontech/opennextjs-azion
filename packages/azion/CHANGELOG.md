@@ -1,5 +1,13 @@
 # @aziontech/opennextjs-azion
 
+## 1.1.3
+
+### Patch Changes
+
+- [#65](https://github.com/aziontech/opennextjs-azion/pull/65) [`e2c663b`](https://github.com/aziontech/opennextjs-azion/commit/e2c663b190ebb8614fdf97aecc91959c7751a553) Thanks [@jose-filho-azion](https://github.com/jose-filho-azion)! - fix: restore original request URL for Next.js render() on the edge runtime
+  fix: redirect bare node-fetch imports to the native fetch shim
+  refactor: apply middleware rewrite-router patch via patchCodeWithValidations
+
 ## 1.1.2
 
 ### Patch Changes
