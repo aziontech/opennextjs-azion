@@ -45,7 +45,7 @@ const requestHandler = async (request: Request, env: AzionEnv, ctx: ExecutionCon
   const url = new URL(request.url);
   // TODO: This is a workaround for rewrite next.config
   // Issue: https://github.com/opennextjs/opennextjs-aws/issues/848
-  request.headers.set("x-original-url", url.pathname);
+  request.headers.set("x-original-url", url.pathname + url.search);
   // Serve images in development.
   // Note: "/data-cache/image/..." requests do not reach production workers.
   // TODO: make support for this
