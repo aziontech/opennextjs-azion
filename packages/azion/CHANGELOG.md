@@ -1,5 +1,11 @@
 # @aziontech/opennextjs-azion
 
+## 1.1.4
+
+### Patch Changes
+
+- [#70](https://github.com/aziontech/opennextjs-azion/pull/70) [`f960edb`](https://github.com/aziontech/opennextjs-azion/commit/f960edbed64cd592f54d1c9c206060ba37e6a9dc) Thanks [@jose-filho-azion](https://github.com/jose-filho-azion)! - chore: remove peerDependencies constraint on next to avoid false-positive warnings on supported older versions
+
 ## 1.1.3
 
 ### Patch Changes
