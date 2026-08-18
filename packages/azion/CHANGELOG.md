@@ -1,5 +1,17 @@
 # @aziontech/opennextjs-azion
 
+## 1.1.5
+
+### Patch Changes
+
+- [#72](https://github.com/aziontech/opennextjs-azion/pull/72) [`ddc0a6b`](https://github.com/aziontech/opennextjs-azion/commit/ddc0a6b00ef4e3387c75461268c2b7ae63e63a2d) Thanks [@jose-filho-azion](https://github.com/jose-filho-azion)! - fix: preserve query params in x-original-url render patch
+
+  Query string was stripped when rebuilding req.url from
+  x-original-url, so params like ?version=... never
+  reached API routes. Preserve url.search in the header and merge
+  the reparsed search params into the query object passed to
+  super.render.
+
 ## 1.1.4
 
 ### Patch Changes
