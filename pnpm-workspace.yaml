@@ -18,7 +18,7 @@ catalog:
   glob: ^12.0.0
   globals: ^15.9.0
   mock-fs: ^5.4.1
-  next: ^15.5.21
+  next: ^15.5.24
   package-manager-detector: ^0.2.0
   react-dom: ^18
   react: ^18
