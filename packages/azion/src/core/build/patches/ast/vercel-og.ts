@@ -49,7 +49,9 @@ rule:
 fix: |-
   async function getFallbackFont() {
     // .bin is used so that a loader does not need to be configured for .ttf files
-    return (await import("$PATH.bin")).default;
+    const font = (await import("$PATH.bin")).default;
+    // The Azion bundler externalizes .bin files as \`file://\` URLs
+    return typeof font === "string" && font.startsWith("file://") ? (await fetch(font)).arrayBuffer() : font;
   }
 
   var fallbackFont = getFallbackFont();
@@ -86,20 +88,29 @@ fix: |-
 
 export const vercelOgYogaSecondRule = `
 rule:
-  any:
-    - pattern: var initializedYoga = initYoga(yoga_wasm).then((yoga2) => Ll(yoga2));
-    - pattern: var initializedYoga = initYoga(yoga_wasm).then(yoga2 => Ll(yoga2));
+  pattern: var initializedYoga = initYoga(yoga_wasm).then($CALLBACK);
 
 fix: |-
   const yoga_wasm_bytes = await loadWasm(yoga_wasm);
-  const initializedYoga = initYoga(yoga_wasm_bytes).then(yoga2 => Ll(yoga2));
+  const initializedYoga = initYoga(yoga_wasm_bytes).then($CALLBACK);
+`;
+
+// Next 16.2+ initializes Yoga through satori
+export const vercelOgSatoriYogaRule = `
+rule:
+  pattern: var initializeSatori = $INIT(yoga_wasm);
+
+fix: |-
+  const yoga_wasm_bytes = await loadWasm(yoga_wasm);
+  var initializeSatori = $INIT(yoga_wasm_bytes);
 `;
 
 export function patchVercelOgYoga(root: SgNode): ReturnType<typeof applyRule> {
   const firstResult = applyRule(vercelOgYogaRule, root);
   const secondResult = applyRule(vercelOgYogaSecondRule, root);
+  const thirdResult = applyRule(vercelOgSatoriYogaRule, root);
   return {
-    edits: [...firstResult.edits, ...secondResult.edits],
-    matches: [...firstResult.matches, ...secondResult.matches],
+    edits: [...firstResult.edits, ...secondResult.edits, ...thirdResult.edits],
+    matches: [...firstResult.matches, ...secondResult.matches, ...thirdResult.matches],
   };
 }

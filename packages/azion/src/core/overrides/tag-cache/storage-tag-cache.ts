@@ -10,7 +10,8 @@ import { getAzionContext } from "../../../api/index.js";
 import { debugCache, FALLBACK_BUILD_ID, NAME_FILE_TAG_MANIFEST } from "../internal.js";
 
 const CACHE_DIR = "data-cache/_next_cache";
-const BUILD_ID = process.env.NEXT_BUILD_ID ?? FALLBACK_BUILD_ID;
+// `OPEN_NEXT_BUILD_ID` is the deployment ID when set (Next 16.2+ keeps `BUILD_ID` constant in that case)
+const BUILD_ID = process.env.OPEN_NEXT_BUILD_ID ?? process.env.NEXT_BUILD_ID ?? FALLBACK_BUILD_ID;
 
 // Simple in-memory lock to prevent concurrent writes to the same manifest
 const manifestLocks = new Map<string, Promise<void>>();
