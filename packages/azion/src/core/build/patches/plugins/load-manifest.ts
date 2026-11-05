@@ -39,9 +39,9 @@ async function getLoadManifestRule(buildOpts: BuildOptions) {
   const baseDir = join(outputDir, "server-functions/default", getPackagePath(buildOpts));
   const dotNextDir = join(baseDir, ".next");
 
-  // `prefetch-hints.json` is loaded by Next 16.2+
+  // `prefetch-hints.json` is loaded by Next 16.2+ and `preview-props.json` by Next 16.4+
   const manifests = await glob(
-    join(dotNextDir, "**/{*-manifest,required-server-files,prefetch-hints}.json"),
+    join(dotNextDir, "**/{*-manifest,required-server-files,prefetch-hints,preview-props}.json"),
     {
       windowsPathsNoEscape: true,
     }

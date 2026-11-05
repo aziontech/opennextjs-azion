@@ -70,6 +70,20 @@ const getManifestStorage = async (): Promise<string> => {
   return await getTagManifestStorage(NAME_FILE_TAG_MANIFEST);
 };
 
+/**
+ * Parses the tags manifest for reads.
+ *
+ * Reads are not locked and the manifest can be empty while it is being written, which is treated as no tags.
+ */
+const parseManifestForRead = (manifestContent: string): TagsManifest => {
+  try {
+    return JSON.parse(manifestContent) as TagsManifest;
+  } catch (e) {
+    debugCache("StorageTagCache - Invalid tags manifest:", (e as Error).message);
+    return { items: [] };
+  }
+};
+
 const setManifestStorage = async (manifest: TagsManifest): Promise<void> => {
   const azionContext = getAzionContext();
   const manifestString = JSON.stringify(manifest);
@@ -94,7 +108,7 @@ const storageTagCache: TagCache = {
   getByPath: async (path: string) => {
     debugCache("StorageTagCache - getByPath", path);
     const tagsManifest = await getManifestStorage();
-    const tagsParsed = JSON.parse(tagsManifest) as TagsManifest;
+    const tagsParsed = parseManifestForRead(tagsManifest);
     const tags = tagsParsed?.items.filter((item) => item.path === getCacheKey(path));
     if (!tags || tags?.length === 0) {
       debugCache("StorageTagCache - No tags found for path:", path);
@@ -106,7 +120,7 @@ const storageTagCache: TagCache = {
   getByTag: async (tag: string) => {
     debugCache("StorageTagCache - getByTag", tag);
     const tagsManifest = await getManifestStorage();
-    const tagsParsed = JSON.parse(tagsManifest) as TagsManifest;
+    const tagsParsed = parseManifestForRead(tagsManifest);
     const tags = tagsParsed?.items.filter((item) => item.tag === getCacheKey(tag));
     if (!tags || tags?.length === 0) {
       debugCache("StorageTagCache - No tags found for tag:", tag);
@@ -118,7 +132,7 @@ const storageTagCache: TagCache = {
   getLastModified: async (key: string, lastModified: number) => {
     debugCache("StorageTagCache - getLastModified", key, lastModified);
     const tagsManifest = await getManifestStorage();
-    const tagsParsed = JSON.parse(tagsManifest) as TagsManifest;
+    const tagsParsed = parseManifestForRead(tagsManifest);
     const match = tagsParsed.revalidations?.find((reval) => {
       const tag = tagsParsed.items.find((t) => t.tag === reval.tag && t.path === getCacheKey(key));
       return tag && typeof reval.revalidatedAt === "number" && reval.revalidatedAt > (lastModified ?? 0);

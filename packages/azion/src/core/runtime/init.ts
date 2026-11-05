@@ -82,6 +82,19 @@ function initRuntime() {
     return originalBufferIndexOf.call(this, value, ...args);
   };
 
+  // Next 16.4+ calls `ref()`, `unref()` and `hasRef()` on the value returned by `setImmediate`.
+  // The `setImmediate` polyfill returns a number.
+  // Note: Next captures the global timers when the server is loaded, i.e. after this function runs.
+  patchSetImmediate();
+
+  // Next 16.4+ expects `process.nextTick` callbacks to run before the next task.
+  // The global `process` polyfill schedules them with `setTimeout`.
+  // Note: the global `process` is not the `node:process` module imported in this file.
+  if (globalThis.process) {
+    globalThis.process.nextTick = (callback: (...args: unknown[]) => void, ...args: unknown[]) =>
+      queueMicrotask(() => callback(...args));
+  }
+
   // Do not crash on cache not supported
   // https://github.com/azion/workerd/pull/2434
   // compatibility flag "cache_option_enabled" -> does not support "force-cache"
@@ -116,6 +129,54 @@ function initRuntime() {
     // we need to use the request as is.
     __dangerous_ON_edge_converter_returns_request: true,
   });
+}
+
+/**
+ * Makes `setImmediate` return a Node-like `Immediate` when the polyfill returns a plain id.
+ */
+function patchSetImmediate() {
+  const nativeSetImmediate = globalThis.setImmediate;
+  const nativeClearImmediate = globalThis.clearImmediate;
+
+  class Immediate {
+    private hasRefValue = true;
+
+    constructor(readonly id: unknown) {}
+
+    ref() {
+      this.hasRefValue = true;
+      return this;
+    }
+
+    unref() {
+      this.hasRefValue = false;
+      return this;
+    }
+
+    hasRef() {
+      return this.hasRefValue;
+    }
+
+    [Symbol.toPrimitive]() {
+      return this.id;
+    }
+  }
+
+  globalThis.setImmediate = Object.assign(function setImmediate(
+    callback: (...args: unknown[]) => void,
+    ...args: unknown[]
+  ) {
+    const immediate: unknown = nativeSetImmediate(callback, ...args);
+    return typeof (immediate as Partial<Immediate> | undefined)?.ref === "function"
+      ? immediate
+      : new Immediate(immediate);
+  }, nativeSetImmediate) as unknown as typeof globalThis.setImmediate;
+
+  globalThis.clearImmediate = function clearImmediate(immediate: unknown) {
+    return nativeClearImmediate(
+      (immediate instanceof Immediate ? immediate.id : immediate) as NodeJS.Immediate
+    );
+  } as typeof globalThis.clearImmediate;
 }
 
 /**

@@ -14,12 +14,14 @@ import { build, type Plugin } from "esbuild";
 import { patchVercelOgLibrary } from "./patches/ast/patch-vercel-og-library.js";
 import { patchWebpackRuntime } from "./patches/ast/webpack-runtime.js";
 import * as patches from "./patches/index.js";
+import { patchBufferIsUtf8 } from "./patches/plugins/buffer-is-utf8.js";
 import { setBundlerExternal } from "./patches/plugins/bundler-externals.js";
 import { inlineDynamicRequireLoadComponents } from "./patches/plugins/dynamic-require-load-components.js";
 import { inlineDynamicRequires } from "./patches/plugins/dynamic-requires.js";
 import { inlineFindDir } from "./patches/plugins/find-dir.js";
 import { patchInstrumentation } from "./patches/plugins/instrumentation.js";
 import { inlineLoadManifest } from "./patches/plugins/load-manifest.js";
+import { patchModuleLoadingSignal } from "./patches/plugins/module-loading.js";
 import { patchNextServer } from "./patches/plugins/next-server.js";
 import { patchNodeEnvironment } from "./patches/plugins/node-environment.js";
 import { handleOptionalDependencies } from "./patches/plugins/optional-deps.js";
@@ -88,6 +90,10 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
     format: "esm",
     target: "esnext",
     minify: false,
+    // Keep the original function names when renaming identifiers.
+    // React compares component names when resuming a partial prerender (Cache Components),
+    // a renamed component (i.e. `sf` to `sf2`) makes the resume fall back to client rendering.
+    keepNames: true,
     metafile: true,
     // Next traces files using the default conditions from `nft` (`node`, `require`, `import` and `default`)
     //
@@ -118,6 +124,8 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       inlinePatchRewriteURLSource(updater),
       patchNodeEnvironment(updater),
       inlinePatchRenderUrl(updater),
+      patchBufferIsUtf8(updater),
+      patchModuleLoadingSignal(updater),
 
       // Apply updater updates, must be the last plugin
       updater.plugin,
@@ -168,7 +176,7 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       // Turbopack is not supported for build at the moment, so we disable it
       "process.env.TURBOPACK": "false",
       // This define should be safe to use for Next 14.2+, earlier versions (13.5 and less) will cause trouble
-      "process.env.__NEXT_EXPERIMENTAL_REACT": `${needsExperimentalReact(nextConfig)}`,
+      "process.env.__NEXT_EXPERIMENTAL_REACT": `${needsExperimentalReact(nextConfig, appPath)}`,
       // Fix `res.validate` in Next 15.4 (together with the `route-module` patch)
       "process.env.__NEXT_TRUST_HOST_HEADER": "true",
     },
