@@ -106,24 +106,35 @@ fix: |-
 `;
 }
 
+/**
+ * Creates a rule that statically wires the composable cache handler.
+ *
+ * The whole body of `loadCustomCacheHandlers` is replaced: Next 16 reads the top-level `cacheHandlers`
+ * (not `experimental.cacheHandlers`) and dynamically imports them, which is not supported.
+ * Replacing the body keeps the (minified) parameters intact.
+ *
+ * @param handlerPath Path to the generated composable cache handler.
+ * @returns An ast-grep rule replacing the body of `loadCustomCacheHandlers`.
+ */
 export function createComposableCacheHandlersRule(handlerPath: string) {
   return `
 rule:
-  pattern: "const { cacheHandlers } = this.nextConfig.experimental;"
+  kind: statement_block
   inside:
     kind: method_definition
+    field: body
     has:
       field: name
       regex: ^loadCustomCacheHandlers$
-    stopBy: end
 
 fix: |-
-  const cacheHandlers = null;
-  const handlersSymbol = Symbol.for('@next/cache-handlers');
-  const handlersMapSymbol = Symbol.for('@next/cache-handlers-map');
-  const handlersSetSymbol = Symbol.for('@next/cache-handlers-set');
-  globalThis[handlersMapSymbol] = new Map();
-  globalThis[handlersMapSymbol].set("default", require('${normalizePath(handlerPath)}').default);
-  globalThis[handlersSetSymbol] = new Set(globalThis[handlersMapSymbol].values());
+  {
+    const handlersMapSymbol = Symbol.for('@next/cache-handlers-map');
+    const handlersSetSymbol = Symbol.for('@next/cache-handlers-set');
+    globalThis[handlersMapSymbol] = new Map();
+    globalThis[handlersMapSymbol].set("default", require('${normalizePath(handlerPath)}').default);
+    globalThis[handlersMapSymbol].set("remote", require('${normalizePath(handlerPath)}').default);
+    globalThis[handlersSetSymbol] = new Set(globalThis[handlersMapSymbol].values());
+  }
 `;
 }

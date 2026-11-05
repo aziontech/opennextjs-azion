@@ -14,6 +14,7 @@ import type { ContentUpdater, Plugin } from "@opennextjs/aws/plugins/content-upd
 import { getCrossPlatformPathRegex } from "@opennextjs/aws/utils/regex.js";
 
 import { normalizePath } from "../../utils/index.js";
+import { createComposableCacheHandlersRule } from "./next-server.js";
 
 export function patchRouteModules(updater: ContentUpdater, buildOpts: BuildOptions): Plugin {
   return updater.updateContent("route-module", [
@@ -22,7 +23,8 @@ export function patchRouteModules(updater: ContentUpdater, buildOpts: BuildOptio
         escape: false,
       }),
       versions: ">=15.4.0",
-      contentFilter: /getIncrementalCache\(/,
+      // App routes do not have `getIncrementalCache` but load the composable cache handlers
+      contentFilter: /(getIncrementalCache\(|loadCustomCacheHandlers\()/,
       callback: async ({ contents }) => {
         const { outputDir } = buildOpts;
 
@@ -30,6 +32,12 @@ export function patchRouteModules(updater: ContentUpdater, buildOpts: BuildOptio
         const cacheHandler = path.join(outputPath, getPackagePath(buildOpts), "cache.cjs");
         contents = patchCode(contents, getIncrementalCacheRule(cacheHandler));
         contents = patchCode(contents, forceTrustHostHeader);
+        const composableCacheHandler = path.join(
+          outputPath,
+          getPackagePath(buildOpts),
+          "composable-cache.cjs"
+        );
+        contents = patchCode(contents, createComposableCacheHandlersRule(composableCacheHandler));
         return contents;
       },
     },
