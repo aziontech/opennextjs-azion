@@ -18,6 +18,7 @@ import { compileEnvFiles } from "../../core/build/open-next/compile-env-files.js
 import { compileInit } from "../../core/build/open-next/compile-init.js";
 import { createServerBundle } from "../../core/build/open-next/createServerBundle.js";
 import { updateMiddlewareBundledCode } from "../../core/build/patches/plugins/patch-rewrite-router.js";
+import { alignCacheAssetsBuildId } from "../../core/build/utils/align-cache-build-id.js";
 import { getVersion } from "../../core/build/utils/version.js";
 import type { ProjectOptions } from "../../core/project-options.js";
 
@@ -78,6 +79,8 @@ export async function build(
 
   if (config.dangerous?.disableIncrementalCache !== true) {
     const { useTagCache, metaFiles } = createCacheAssets(options);
+    // Seed every cache asset under the ID used by the runtime caches (deploymentId when set)
+    alignCacheAssetsBuildId(options, metaFiles);
     if (useTagCache) {
       await compileTagAssets(metaFiles, options);
     }
