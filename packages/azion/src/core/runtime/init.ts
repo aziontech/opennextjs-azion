@@ -14,6 +14,7 @@ import stream from "node:stream";
 
 // @ts-expect-error: resolved by wrangler build
 import * as nextEnvVars from "./next-env.mjs";
+import { alignPerformanceTimeOrigin } from "./performance-time-origin.js";
 
 globalThis.AsyncLocalStorage = AsyncLocalStorage;
 const azionContextALS = new AsyncLocalStorage();
@@ -81,6 +82,10 @@ function initRuntime() {
     }
     return originalBufferIndexOf.call(this, value, ...args);
   };
+
+  // Next computes the current time as `performance.timeOrigin + performance.now()` (i.e. to check whether an
+  // ISR page is stale). The runtime values are not an epoch time, so pages were never revalidated.
+  alignPerformanceTimeOrigin();
 
   // Do not crash on cache not supported
   // https://github.com/azion/workerd/pull/2434
