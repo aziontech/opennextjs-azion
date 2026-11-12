@@ -72,6 +72,7 @@ function initRuntime() {
   globalThis.__filename ??= "";
 
   // Next 16.2+ calls `Buffer.prototype.indexOf` with a `Uint8Array` (`indexOfUint8Array`).
+  // TODO: move this polyfill to the Azion lib (`@aziontech/unenv-preset`).
   // Node accepts it but the Buffer polyfill only accepts string, number or Buffer.
   const originalBufferIndexOf = Buffer.prototype.indexOf;
   Buffer.prototype.indexOf = function (
@@ -86,21 +87,27 @@ function initRuntime() {
   };
 
   // Next 16.4+ calls `ref()`, `unref()` and `hasRef()` on the value returned by `setImmediate`.
+  // TODO: move this polyfill to the Azion lib (`@aziontech/unenv-preset`).
   // The `setImmediate` polyfill returns a number.
   // Note: Next captures the global timers when the server is loaded, i.e. after this function runs.
   patchSetImmediate();
 
   // A polyfill can replace the global `AsyncLocalStorage` after this module is loaded.
+  // TODO: move this polyfill to the Azion lib (`@aziontech/unenv-preset`).
   addStaticSnapshot(globalThis.AsyncLocalStorage);
 
   // Next computes the current time as `performance.timeOrigin + performance.now()` (i.e. to check whether an
   // ISR page is stale). The runtime values are not an epoch time, so pages were never revalidated.
+  // TODO: move this polyfill to the Azion lib (`@aziontech/unenv-preset`).
+  // Remove this one once the lib polyfill is released and used by the bundler.
   alignPerformanceTimeOrigin();
 
   // The runtime reports the errors thrown in `process.nextTick` callbacks with `reportError`, which it does not define.
+  // TODO: move this polyfill to the Azion lib (`@aziontech/unenv-preset`).
   globalThis.reportError ??= (error: unknown) => console.error(error);
 
   // Next 16.4+ expects `process.nextTick` callbacks to run before the next task.
+  // TODO: move this polyfill to the Azion lib (`@aziontech/unenv-preset`).
   // The global `process` polyfill schedules them with `setTimeout`.
   // Note: the global `process` is not the `node:process` module imported in this file.
   if (globalThis.process) {
