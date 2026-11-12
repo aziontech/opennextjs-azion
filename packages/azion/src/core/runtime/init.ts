@@ -16,7 +16,9 @@ import stream from "node:stream";
 import * as nextEnvVars from "./next-env.mjs";
 import { alignPerformanceTimeOrigin } from "./performance-time-origin.js";
 
+// Note: Next creates its `AsyncLocalStorage`s from the global class
 globalThis.AsyncLocalStorage = AsyncLocalStorage;
+addStaticSnapshot(AsyncLocalStorage);
 const azionContextALS = new AsyncLocalStorage();
 
 // Note: this symbol needs to be kept in sync with `src/api/get-azion-context.ts`
@@ -70,6 +72,7 @@ function initRuntime() {
   globalThis.__filename ??= "";
 
   // Next 16.2+ calls `Buffer.prototype.indexOf` with a `Uint8Array` (`indexOfUint8Array`).
+  // TODO: move this polyfill to the Azion lib (`@aziontech/unenv-preset`).
   // Node accepts it but the Buffer polyfill only accepts string, number or Buffer.
   const originalBufferIndexOf = Buffer.prototype.indexOf;
   Buffer.prototype.indexOf = function (
@@ -83,9 +86,34 @@ function initRuntime() {
     return originalBufferIndexOf.call(this, value, ...args);
   };
 
+  // Next 16.4+ calls `ref()`, `unref()` and `hasRef()` on the value returned by `setImmediate`.
+  // TODO: move this polyfill to the Azion lib (`@aziontech/unenv-preset`).
+  // The `setImmediate` polyfill returns a number.
+  // Note: Next captures the global timers when the server is loaded, i.e. after this function runs.
+  patchSetImmediate();
+
+  // A polyfill can replace the global `AsyncLocalStorage` after this module is loaded.
+  // TODO: move this polyfill to the Azion lib (`@aziontech/unenv-preset`).
+  addStaticSnapshot(globalThis.AsyncLocalStorage);
+
   // Next computes the current time as `performance.timeOrigin + performance.now()` (i.e. to check whether an
   // ISR page is stale). The runtime values are not an epoch time, so pages were never revalidated.
+  // TODO: move this polyfill to the Azion lib (`@aziontech/unenv-preset`).
+  // Remove this one once the lib polyfill is released and used by the bundler.
   alignPerformanceTimeOrigin();
+
+  // The runtime reports the errors thrown in `process.nextTick` callbacks with `reportError`, which it does not define.
+  // TODO: move this polyfill to the Azion lib (`@aziontech/unenv-preset`).
+  globalThis.reportError ??= (error: unknown) => console.error(error);
+
+  // Next 16.4+ expects `process.nextTick` callbacks to run before the next task.
+  // TODO: move this polyfill to the Azion lib (`@aziontech/unenv-preset`).
+  // The global `process` polyfill schedules them with `setTimeout`.
+  // Note: the global `process` is not the `node:process` module imported in this file.
+  if (globalThis.process) {
+    globalThis.process.nextTick = (callback: (...args: unknown[]) => void, ...args: unknown[]) =>
+      queueMicrotask(() => callback(...args));
+  }
 
   // Do not crash on cache not supported
   // https://github.com/azion/workerd/pull/2434
@@ -121,6 +149,132 @@ function initRuntime() {
     // we need to use the request as is.
     __dangerous_ON_edge_converter_returns_request: true,
   });
+}
+
+/**
+ * Adds the static `AsyncLocalStorage.snapshot()` and `AsyncLocalStorage.bind()`, used by Next 16+, when the runtime
+ * does not implement them.
+ *
+ * Without them, `AsyncLocalStorage.bind` is `Function.prototype.bind` and calling the bound function throws
+ * "Class constructor AsyncLocalStorage cannot be invoked without 'new'".
+ *
+ * The class is patched in place because Next captures the global class when it is loaded. The snapshot restores
+ * the stores of the instances that have been run.
+ */
+function addStaticSnapshot(AsyncLocalStorageClass: typeof AsyncLocalStorage | undefined) {
+  if (!AsyncLocalStorageClass) {
+    return;
+  }
+  const nativeSnapshot = (AsyncLocalStorageClass as { snapshot?: typeof AsyncLocalStorage.snapshot })
+    .snapshot;
+  const hasBind = AsyncLocalStorageClass.bind !== Function.prototype.bind;
+  if (typeof nativeSnapshot === "function" && hasBind) {
+    return;
+  }
+
+  let snapshot: typeof AsyncLocalStorage.snapshot;
+  if (typeof nativeSnapshot === "function") {
+    snapshot = nativeSnapshot.bind(AsyncLocalStorageClass);
+  } else {
+    const instances = new Set<AsyncLocalStorage<unknown>>();
+    const prototype = AsyncLocalStorageClass.prototype as unknown as Record<string, unknown>;
+    for (const method of ["run", "enterWith"]) {
+      const original = prototype[method];
+      if (typeof original === "function") {
+        prototype[method] = function (this: AsyncLocalStorage<unknown>, ...args: unknown[]) {
+          instances.add(this);
+          return original.apply(this, args);
+        };
+      }
+    }
+    snapshot = () => {
+      const stores = Array.from(instances, (instance) => [instance, instance.getStore()] as const);
+      return <R, A extends unknown[]>(fn: (...args: A) => R, ...args: A): R =>
+        stores.reduce<() => R>(
+          (next, [instance, store]) =>
+            () =>
+              instance.run(store, next),
+          () => fn(...args)
+        )();
+    };
+  }
+
+  Object.defineProperties(AsyncLocalStorageClass, {
+    snapshot: { value: snapshot, configurable: true, writable: true },
+    bind: {
+      value: <F extends (...args: never[]) => unknown>(fn: F): F => {
+        const run = snapshot();
+        return ((...args: Parameters<F>) => run(fn, ...args)) as F;
+      },
+      configurable: true,
+      writable: true,
+    },
+  });
+}
+
+/**
+ * Makes `setImmediate` return a Node-like `Immediate` (`ref()`, `unref()`, `hasRef()`).
+ *
+ * The runtime `setImmediate` and `clearImmediate` do not work together (one returns a number, the other expects an
+ * object) and the production runtime may not define `setImmediate` at all: the immediates are cancelled here and
+ * scheduled with the runtime `setImmediate` or with a macrotask (as the unenv polyfill does).
+ */
+function patchSetImmediate() {
+  const originalSetImmediate = globalThis.setImmediate;
+  const schedule: (run: () => void) => void =
+    typeof originalSetImmediate === "function"
+      ? (run) => originalSetImmediate(run)
+      : (run) => globalThis.setTimeout(run, 0);
+
+  let nextId = 1;
+
+  class Immediate {
+    readonly id = nextId++;
+    cancelled = false;
+    private hasRefValue = true;
+
+    ref() {
+      this.hasRefValue = true;
+      return this;
+    }
+
+    unref() {
+      this.hasRefValue = false;
+      return this;
+    }
+
+    hasRef() {
+      return this.hasRefValue;
+    }
+
+    [Symbol.toPrimitive]() {
+      return this.id;
+    }
+
+    [Symbol.dispose]() {
+      this.cancelled = true;
+    }
+  }
+
+  globalThis.setImmediate = Object.assign(function setImmediate(
+    callback: (...args: unknown[]) => void,
+    ...args: unknown[]
+  ) {
+    const immediate = new Immediate();
+    schedule(() => {
+      if (!immediate.cancelled) {
+        immediate.cancelled = true;
+        callback(...args);
+      }
+    });
+    return immediate;
+  }, originalSetImmediate) as unknown as typeof globalThis.setImmediate;
+
+  globalThis.clearImmediate = function clearImmediate(immediate: unknown) {
+    if (immediate instanceof Immediate) {
+      immediate.cancelled = true;
+    }
+  } as typeof globalThis.clearImmediate;
 }
 
 /**
@@ -161,4 +315,6 @@ declare global {
   var __NEXT_BASE_PATH__: string;
   // Deployment ID
   var __DEPLOYMENT_ID__: string;
+  // Web API, not defined by the runtime
+  var reportError: ((error: unknown) => void) | undefined;
 }

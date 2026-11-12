@@ -50,6 +50,8 @@ describe("inlineLoadManifest", () => {
       [`${dotNextDir}/build-manifest.json`]: JSON.stringify({ pages: {} }),
       // Next 16.2+
       [`${dotNextDir}/server/prefetch-hints.json`]: JSON.stringify({ "/": ["/about"] }),
+      // Next 16.4+
+      [`${dotNextDir}/server/preview-props.json`]: JSON.stringify({ previewModeId: "id" }),
     });
     manifests = await getPatchedManifests();
   });
@@ -60,6 +62,9 @@ describe("inlineLoadManifest", () => {
     expect(manifests.loadManifest("/var/task/.next/build-manifest.json")).toEqual({ pages: {} });
     expect(manifests.loadManifest("/var/task/.next/server/prefetch-hints.json")).toEqual({
       "/": ["/about"],
+    });
+    expect(manifests.loadManifest("/var/task/.next/server/preview-props.json")).toEqual({
+      previewModeId: "id",
     });
   });
 
