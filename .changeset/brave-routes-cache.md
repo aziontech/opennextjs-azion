@@ -17,8 +17,6 @@ fix: support Next.js 16.4
   the top-level `cacheHandlers` set by `@opennextjs/aws` and failed with `Module not found: "file:///.next/unused"`.
 - Add the static `AsyncLocalStorage.snapshot()` and `AsyncLocalStorage.bind()` used by Next 16 when the runtime does
   not implement them.
-- Make `performance.timeOrigin` follow `Date.now()` when the runtime value is not an epoch time: Next 16 checks
-  whether ISR pages are stale with `performance.timeOrigin + performance.now()`, so they were never revalidated.
 - Define `reportError`, used by the runtime to report the errors thrown in `process.nextTick` callbacks.
 - Scope the Next module-loading `CacheSignal` to the request.
 - Select the experimental React runtime with the helper of the app's Next version.

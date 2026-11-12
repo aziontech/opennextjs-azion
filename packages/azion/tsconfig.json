@@ -14,7 +14,7 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "target": "ES2022",
-    "types": ["@opennextjs/aws/types/global.d.ts"]
+    "types": ["node", "@opennextjs/aws/types/global.d.ts"]
   },
   "include": ["src/**/*.ts", "env.d.ts"],
   "exclude": ["src/**/*.spec.ts"]

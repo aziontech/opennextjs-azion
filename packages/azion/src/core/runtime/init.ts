@@ -14,6 +14,7 @@ import stream from "node:stream";
 
 // @ts-expect-error: resolved by wrangler build
 import * as nextEnvVars from "./next-env.mjs";
+import { alignPerformanceTimeOrigin } from "./performance-time-origin.js";
 
 // Note: Next creates its `AsyncLocalStorage`s from the global class
 globalThis.AsyncLocalStorage = AsyncLocalStorage;
@@ -92,21 +93,9 @@ function initRuntime() {
   // A polyfill can replace the global `AsyncLocalStorage` after this module is loaded.
   addStaticSnapshot(globalThis.AsyncLocalStorage);
 
-  // Next 16 computes the current time as `performance.timeOrigin + performance.now()` (i.e. to check whether
-  // an ISR page is stale). The runtime `timeOrigin` is not an epoch time and `performance.now()` does not advance
-  // between requests, so `timeOrigin` is made to follow `Date.now()`.
-  const timeOriginDrift =
-    typeof performance === "undefined" ? 0 : Date.now() - ((performance.timeOrigin || 0) + performance.now());
-  if (!(Math.abs(timeOriginDrift) < 60_000)) {
-    try {
-      Object.defineProperty(performance, "timeOrigin", {
-        get: () => Date.now() - performance.now(),
-        configurable: true,
-      });
-    } catch {
-      // Keep the runtime value when `timeOrigin` can not be overridden.
-    }
-  }
+  // Next computes the current time as `performance.timeOrigin + performance.now()` (i.e. to check whether an
+  // ISR page is stale). The runtime values are not an epoch time, so pages were never revalidated.
+  alignPerformanceTimeOrigin();
 
   // The runtime reports the errors thrown in `process.nextTick` callbacks with `reportError`, which it does not define.
   globalThis.reportError ??= (error: unknown) => console.error(error);
