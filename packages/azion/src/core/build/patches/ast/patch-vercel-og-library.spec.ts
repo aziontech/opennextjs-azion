@@ -40,6 +40,7 @@ describe("patchVercelOgLibrary", () => {
       path.join(nodeModulesVercelOgDir, "index.edge.js"),
       `var fallbackFont = fetch(new URL("./noto-sans-v27-latin-regular.ttf", import.meta.url)).then((res) => res.arrayBuffer());`
     );
+    writeFileSync(path.join(nodeModulesVercelOgDir, "yoga.wasm"), "");
     writeFileSync(openNextOgRoutePath, `e.exports=import("next/dist/compiled/@vercel/og/index.node.js")`);
     writeFileSync(path.join(openNextVercelOgDir, "index.node.js"), "");
     writeFileSync(path.join(openNextVercelOgDir, "noto-sans-v27-latin-regular.ttf"), "");
@@ -55,6 +56,7 @@ describe("patchVercelOgLibrary", () => {
         "index.edge.js",
         "index.node.js",
         "noto-sans-v27-latin-regular.ttf.bin",
+        "yoga.wasm",
       ]
     `);
 
@@ -62,7 +64,9 @@ describe("patchVercelOgLibrary", () => {
       .toMatchInlineSnapshot(`
       "async function getFallbackFont() {
         // .bin is used so that a loader does not need to be configured for .ttf files
-        return (await import("./noto-sans-v27-latin-regular.ttf.bin")).default;
+        const font = (await import("./noto-sans-v27-latin-regular.ttf.bin")).default;
+        // The Azion bundler externalizes .bin files as \`file://\` URLs
+        return typeof font === "string" && font.startsWith("file://") ? (await fetch(font)).arrayBuffer() : font;
       }
 
       var fallbackFont = getFallbackFont();"

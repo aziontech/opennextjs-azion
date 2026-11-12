@@ -45,6 +45,15 @@ export function patchVercelOgLibrary(buildOpts: BuildOptions) {
 
       copyFileSync(tracedEdgePath, outputEdgePath);
 
+      // Next 16.2+ edge entry also imports `yoga.wasm`, which is not traced for the Node entry.
+      const tracedYogaPath = path.join(
+        path.dirname(traceInfoPath),
+        tracedNodePath.replace("index.node.js", "yoga.wasm")
+      );
+      if (existsSync(tracedYogaPath)) {
+        copyFileSync(tracedYogaPath, path.join(outputDir, "yoga.wasm"));
+      }
+
       // Change font fetches in the library to use imports.
       const node = parseFile(outputEdgePath);
       const { edits, matches } = patchVercelOgFallbackFont(node);

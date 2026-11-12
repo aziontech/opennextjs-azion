@@ -20,7 +20,8 @@ export const CACHE_DIR = "data-cache/_next_cache";
 
 export const NAME = "azion-storage-incremental-cache";
 
-const BUILD_ID = process.env.NEXT_BUILD_ID ?? FALLBACK_BUILD_ID;
+// `OPEN_NEXT_BUILD_ID` is the deployment ID when set (Next 16.2+ keeps `BUILD_ID` constant in that case)
+const BUILD_ID = process.env.OPEN_NEXT_BUILD_ID ?? process.env.NEXT_BUILD_ID ?? FALLBACK_BUILD_ID;
 
 /**
  * This cache uses Workers storage.
