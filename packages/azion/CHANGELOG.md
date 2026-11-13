@@ -1,5 +1,56 @@
 # @aziontech/opennextjs-azion
 
+## 1.1.6
+
+### Patch Changes
+
+- [#86](https://github.com/aziontech/opennextjs-azion/pull/86) [`fd0a766`](https://github.com/aziontech/opennextjs-azion/commit/fd0a76667d3924968a1d58610cc4ecd8c28a6309) Thanks [@vitor-eltz-azion](https://github.com/vitor-eltz-azion)! - fix: support Next.js 16.4
+
+  - Bump `@opennextjs/aws` to 4.1.15. Next 15.5.27+ and 16.3.8+ scope the response cache keys by route
+    (`/route-cache/<kind>/<hash>/$<pathname>`) and only `@opennextjs/aws` 4.1.7+ writes the build cache under
+    these keys, so prerendered pages were never served from the cache.
+  - Inline `preview-props.json`, loaded by Next 16.4+.
+  - Replace `isUtf8` from `node:buffer`, which the polyfill does not implement, when Next 16.4+ inlines the RSC
+    payload.
+  - Return a Node-like `Immediate` from `setImmediate` and run the global `process.nextTick` callbacks as
+    microtasks, as expected by the `setImmediate` tracking of Next 16.4+. `setImmediate` falls back to a macrotask
+    when the runtime does not define it.
+  - Statically wire the composable (`"use cache"`) cache handler in `loadCustomCacheHandlers` on Next 16, which reads
+    the top-level `cacheHandlers` set by `@opennextjs/aws` and failed with `Module not found: "file:///.next/unused"`.
+  - Add the static `AsyncLocalStorage.snapshot()` and `AsyncLocalStorage.bind()` used by Next 16 when the runtime does
+    not implement them.
+  - Define `reportError`, used by the runtime to report the errors thrown in `process.nextTick` callbacks.
+  - Scope the Next module-loading `CacheSignal` to the request.
+  - Select the experimental React runtime with the helper of the app's Next version.
+  - Keep the function names when bundling the server. React compares component names when resuming a partial
+    prerender (Cache Components), renamed components made the resume fall back to client rendering.
+  - Do not crash when the tags manifest is read while it is being written, which happens with concurrent
+    `"use cache"` writes.
+
+- [#85](https://github.com/aziontech/opennextjs-azion/pull/85) [`6ea7866`](https://github.com/aziontech/opennextjs-azion/commit/6ea7866418d2089bdd1c40f142579adad088b5b1) Thanks [@vitor-eltz-azion](https://github.com/vitor-eltz-azion)! - fix: support Next.js 16.2
+
+  Every server-rendered route returned 500 with Next.js 16.2. Inline
+  `prefetch-hints.json` and treat the manifests Next loads with
+  `handleMissing` as optional, shim `require-hook` and `node-environment`
+  when imported by package path, let `Buffer.prototype.indexOf` accept a
+  `Uint8Array`, wrap the `timers/promises.setImmediate` override in a
+  try/catch, copy and load `yoga.wasm` for `next/og`, fetch the `next/og`
+  fallback font from its `file://` URL, patch the pre-16.2 Yoga
+  initialization whatever its minified callback name, and key the caches by
+  `OPEN_NEXT_BUILD_ID` (the `deploymentId` when set), the same ID `@opennextjs/aws`
+  uses for the generated cache assets folder.
+
+  Also seed the `__fetch` cache and the tag cache manifest under that same ID.
+  With a `deploymentId`, they used the real build ID, so the storage ended up
+  with two different ID folders and `revalidateTag` did not match the entries
+  seeded at build time.
+
+  Also make `performance.timeOrigin` follow `Date.now()` when the runtime value
+  is not an epoch time. Next computes the current time as
+  `performance.timeOrigin + performance.now()` to check whether an ISR page is
+  stale, so with the runtime values pages were never revalidated (the response
+  kept `x-nextjs-cache: HIT`) unless `revalidatePath` or `revalidateTag` was called.
+
 ## 1.1.5
 
 ### Patch Changes
