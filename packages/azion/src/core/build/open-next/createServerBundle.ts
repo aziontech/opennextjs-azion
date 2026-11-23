@@ -30,6 +30,7 @@ import type { Plugin } from "esbuild";
 import { patchFetchCacheSetMissingWaitUntil } from "../patches/plugins/patch-fetch-cacheset-missing-waituntil.js";
 import { patchFetchCacheForISR, patchUnstableCacheForISR } from "../patches/plugins/path-fetch-cache-isr.js";
 import { patchResRevalidate } from "../patches/plugins/res-revalidate.js";
+import { patchTurbopackRuntime } from "../patches/plugins/turbopack.js";
 import { patchUseCacheIO } from "../patches/plugins/use-cache.js";
 import { normalizePath } from "../utils/index.js";
 
@@ -206,6 +207,7 @@ async function generateBundle(
     patchUnstableCacheForISR,
     patchResRevalidate,
     patchUseCacheIO,
+    patchTurbopackRuntime,
     ...additionalCodePatches,
   ]);
 

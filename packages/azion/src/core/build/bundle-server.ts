@@ -7,7 +7,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { type BuildOptions, getPackagePath } from "@opennextjs/aws/build/helper.js";
+import { type BuildOptions, getBundlerRuntime, getPackagePath } from "@opennextjs/aws/build/helper.js";
 import { ContentUpdater } from "@opennextjs/aws/plugins/content-updater.js";
 import { build, type Plugin } from "esbuild";
 
@@ -70,6 +70,8 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
   );
   const serverFiles = path.join(baseManifestPath, "required-server-files.json");
   const nextConfig = JSON.parse(fs.readFileSync(serverFiles, "utf-8")).config;
+
+  const useTurbopack = getBundlerRuntime(buildOpts) === "turbopack";
 
   console.log(`\x1b[35m⚙️ Bundling the OpenNext server...\n\x1b[0m`);
 
@@ -173,8 +175,8 @@ export async function bundleServer(buildOpts: BuildOptions): Promise<void> {
       "process.env.NODE_ENV": '"production"',
       // The 2 following defines are used to reduce the bundle size by removing unnecessary code
       // Next uses different precompiled renderers (i.e. `app-page.runtime.prod.js`) based on if you use `TURBOPACK` or some experimental React features
-      // Turbopack is not supported for build at the moment, so we disable it
-      "process.env.TURBOPACK": "false",
+      // `TURBOPACK` must not be forced to `false` for a Turbopack build, as the output is made for it
+      ...(useTurbopack ? {} : { "process.env.TURBOPACK": "false" }),
       // This define should be safe to use for Next 14.2+, earlier versions (13.5 and less) will cause trouble
       "process.env.__NEXT_EXPERIMENTAL_REACT": `${needsExperimentalReact(nextConfig, appPath)}`,
       // Fix `res.validate` in Next 15.4 (together with the `route-module` patch)

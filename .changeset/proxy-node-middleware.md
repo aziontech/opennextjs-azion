@@ -8,4 +8,4 @@ Next.js 16 replaces `middleware.ts` with `proxy.ts`, which always runs on the No
 
 The Node.js middleware is now bundled into a self-contained `middleware/handler.mjs`: the OpenNext config manifests are inlined at build time (as for the edge middleware) and the middleware compiled by Next.js is statically bundled instead of being loaded from the filesystem at runtime.
 
-The support is experimental and only available for webpack builds, which is what the adapter uses for Next.js 16+.
+The support is experimental.

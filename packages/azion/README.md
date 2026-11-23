@@ -130,35 +130,20 @@ This will show detailed information about cache operations, including cache keys
 
 ## Turbopack Support (Next.js 16+)
 
-**OpenNext for Azion currently does not support Turbopack.** We automatically force the use of webpack by adding the `--webpack` flag to the `next build` command during the build process.
+OpenNext for Azion supports both webpack and Turbopack builds. Next.js 16 uses Turbopack by default, and the adapter runs the build command of your project as is: it does not force a bundler.
 
-### What is Turbopack?
+To keep building with webpack, add the `--webpack` flag to the build script of your `package.json`:
 
-Turbopack offers faster build times, OpenNext for Azion requires webpack-specific optimizations and transformations that are not yet compatible with Turbopack's architecture.
-
-### Automatic Webpack Enforcement
-
-When you run `npx opennextjs-azion build`, we automatically:
-
-- Add the `--webpack` flag to the `next build` command
-- Ensure your application is built using webpack instead of Turbopack
-- Apply all necessary transformations for Azion deployment
-
-### Troubleshooting Turbopack-related Issues
-
-If you encounter errors like:
-
-```text
-✘ [ERROR] ⨯ Error: Failed to load chunk server/chunks/ssr/<chunk_name>.js
-
+```json
+{
+  "scripts": {
+    "build": "next build --webpack"
+  }
+}
 ```
 
-This typically indicates that Turbopack was used during the build process. OpenNext for Azion handles this automatically, but if you're manually running `next build` commands, make sure to use:
+## Node.js Middleware (`proxy.ts`)
 
-```bash
-# ✅ Correct - uses webpack
-next build
+Next.js 16 replaces `middleware.ts` with `proxy.ts`, which always runs on the Node.js runtime. OpenNext for Azion bundles it into a self-contained middleware for both webpack and Turbopack builds.
 
-# ❌ Incorrect - uses Turbopack (not supported)
-next build --turbo
-```
+This support is experimental: it re-bundles the middleware compiled by Next.js, which is an internal output that can change between Next.js versions. The build logs a warning when a Node.js middleware is detected.

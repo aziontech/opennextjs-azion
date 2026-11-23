@@ -59,8 +59,10 @@ export function patchVercelOgLibrary(buildOpts: BuildOptions) {
       const { edits, matches } = patchVercelOgFallbackFont(node);
       writeFileSync(outputEdgePath, node.commitEdits(edits));
 
-      const fontFileName = matches[0]!.getMatch("PATH")!.text();
-      renameSync(path.join(outputDir, fontFileName), path.join(outputDir, `${fontFileName}.bin`));
+      if (matches.length > 0) {
+        const fontFileName = matches[0]!.getMatch("PATH")!.text();
+        renameSync(path.join(outputDir, fontFileName), path.join(outputDir, `${fontFileName}.bin`));
+      }
     }
     // Patch Yoga
     const nodeIndex = parseFile(outputEdgePath);

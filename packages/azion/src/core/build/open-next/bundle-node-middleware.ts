@@ -21,9 +21,9 @@
  * - the middleware compiled by Next.js is statically bundled from the traced files that
  *   `@opennextjs/aws` copies to `middleware/<package path>/.next/server/middleware.js`
  *
- * Only webpack builds are supported: the adapter builds Next.js 16+ with `--webpack`.
+ * Both the webpack and the Turbopack runtimes are supported.
  */
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { builtinModules, isBuiltin } from "node:module";
 import path from "node:path";
 
@@ -35,9 +35,49 @@ import { openNextReplacementPlugin } from "@opennextjs/aws/plugins/replacement.j
 import { openNextResolvePlugin } from "@opennextjs/aws/plugins/resolve.js";
 import { getCrossPlatformPathRegex } from "@opennextjs/aws/utils/regex.js";
 import { build, type Plugin } from "esbuild";
+import { glob } from "glob";
 
 import { patchWebpackRuntime } from "../patches/ast/webpack-runtime.js";
 import { setBundlerExternal } from "../patches/plugins/bundler-externals.js";
+import { patchTurbopackRuntimeCode } from "../patches/plugins/turbopack.js";
+import { normalizePath } from "../utils/normalize-path.js";
+
+/**
+ * Inlines the chunks of the middleware compiled by Next.js.
+ *
+ * Both the webpack and the Turbopack runtimes resolve the chunks they need at runtime,
+ * which the Azion runtime does not support. The same patches as for the server are used to inline them.
+ *
+ * @param options Build options.
+ * @param dotNextServerDir The `.next/server` directory of the middleware output.
+ * @throws When the Turbopack runtime can not be found.
+ */
+async function inlineMiddlewareChunks(options: BuildOptions, dotNextServerDir: string): Promise<void> {
+  if (getBundlerRuntime(options) !== "turbopack") {
+    await patchWebpackRuntime(dotNextServerDir);
+    return;
+  }
+
+  const runtimePath = path.join(dotNextServerDir, "chunks/[turbopack]_runtime.js");
+  if (!existsSync(runtimePath)) {
+    throw new Error(`Turbopack runtime not found at ${runtimePath}`);
+  }
+
+  // The Turbopack runtime resolves the chunks relative to the `.next` directory.
+  // `.wasm` chunks are needed too: they are loaded by `loadWasmChunk`.
+  const tracedFiles = await glob(path.join(dotNextServerDir, "**/*.{js,wasm}"), {
+    windowsPathsNoEscape: true,
+  });
+
+  writeFileSync(
+    runtimePath,
+    patchTurbopackRuntimeCode({
+      code: readFileSync(runtimePath, "utf-8"),
+      filePath: normalizePath(runtimePath),
+      tracedFiles,
+    })
+  );
+}
 
 /**
  * Resolves the middleware compiled by Next.js to the copy created by `copyTracedFiles`.
@@ -116,7 +156,7 @@ export const QUEUE_MICROTASK_POLYFILL = `if (typeof queueMicrotask === "undefine
  * Must run after `createMiddleware()`, which creates the output built for a Node.js server.
  *
  * @param options Build options.
- * @throws When the compiled middleware is missing or the app is not built with webpack.
+ * @throws When the compiled middleware or the Turbopack runtime is missing.
  */
 export async function bundleNodeMiddleware(options: BuildOptions): Promise<void> {
   const { config, outputDir } = options;
@@ -129,15 +169,9 @@ export async function bundleNodeMiddleware(options: BuildOptions): Promise<void>
     throw new Error(`Compiled Node.js middleware not found at ${compiledMiddleware}`);
   }
 
-  if (getBundlerRuntime(options) === "turbopack") {
-    throw new Error(
-      "Node.js middleware (`proxy.ts`) is not supported with Turbopack builds. Build the app with webpack (`next build --webpack`)."
-    );
-  }
-
-  // The webpack runtime resolves the chunks of the middleware at runtime, which the Azion
+  // The bundler runtime resolves the chunks of the middleware at runtime, which the Azion
   // runtime does not support. Inline the chunks so that they are statically bundled.
-  await patchWebpackRuntime(dotNextServerDir);
+  await inlineMiddlewareChunks(options, dotNextServerDir);
 
   logger.info("Bundling Node.js middleware...");
 
