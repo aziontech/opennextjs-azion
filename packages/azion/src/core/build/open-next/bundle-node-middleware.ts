@@ -97,6 +97,20 @@ export function nodeBuiltinsPlugin(): Plugin {
 }
 
 /**
+ * Defines `queueMicrotask` when the runtime does not.
+ *
+ * The middleware is loaded before the server, so it can not rely on the polyfill in the banner of the
+ * server bundle. The React runtime vendored by Next.js (`app-page(-turbo).runtime.prod.js`), which the
+ * middleware loads when it imports `next/server` or React, reads `queueMicrotask` when it is evaluated:
+ * without it the load fails with `ReferenceError: queueMicrotask is not defined`.
+ */
+export const QUEUE_MICROTASK_POLYFILL = `if (typeof queueMicrotask === "undefined") {
+  globalThis.queueMicrotask = (callback) => {
+    return Promise.resolve().then(callback);
+  };
+}`;
+
+/**
  * Re-bundles `middleware/handler.mjs` so that it is self-contained.
  *
  * Must run after `createMiddleware()`, which creates the output built for a Node.js server.
@@ -216,6 +230,8 @@ export async function bundleNodeMiddleware(options: BuildOptions): Promise<void>
       js: `
 import { Buffer } from "node:buffer";
 globalThis.Buffer = Buffer;
+
+${QUEUE_MICROTASK_POLYFILL}
 
 // Next.js' compiled middleware references \`AsyncLocalStorage\` as a global.
 import { AsyncLocalStorage } from "node:async_hooks";

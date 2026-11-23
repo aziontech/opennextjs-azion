@@ -1,10 +1,11 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import vm from "node:vm";
 
 import { build, type BuildOptions } from "esbuild";
 import { describe, expect, test } from "vitest";
 
-import { nodeBuiltinsPlugin } from "./bundle-node-middleware.js";
+import { nodeBuiltinsPlugin, QUEUE_MICROTASK_POLYFILL } from "./bundle-node-middleware.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -156,5 +157,31 @@ describe("nodeBuiltinsPlugin", () => {
     `);
 
     expect(uuid).toMatch(/^[0-9a-f-]{36}$/);
+  });
+});
+
+describe("QUEUE_MICROTASK_POLYFILL", () => {
+  test("defines `queueMicrotask` when the runtime does not", async () => {
+    // A bare context has no `queueMicrotask`, as in the Azion runtime
+    const context = vm.createContext({ globalThis: undefined as unknown, calls: [] as string[] });
+    context.globalThis = context;
+    expect(vm.runInContext(`typeof queueMicrotask`, context)).toBe("undefined");
+
+    vm.runInContext(QUEUE_MICROTASK_POLYFILL, context);
+    vm.runInContext(`queueMicrotask(() => calls.push("microtask")); calls.push("sync");`, context);
+    await Promise.resolve();
+
+    // The callback runs after the current synchronous code, as a microtask
+    expect(context.calls).toEqual(["sync", "microtask"]);
+  });
+
+  test("keeps the `queueMicrotask` of the runtime", () => {
+    const native = () => {};
+    const context = vm.createContext({ globalThis: undefined as unknown, queueMicrotask: native });
+    context.globalThis = context;
+
+    vm.runInContext(QUEUE_MICROTASK_POLYFILL, context);
+
+    expect(context.queueMicrotask).toBe(native);
   });
 });
