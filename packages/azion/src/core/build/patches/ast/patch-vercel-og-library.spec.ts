@@ -77,3 +77,39 @@ describe("patchVercelOgLibrary", () => {
     );
   });
 });
+
+describe("patchVercelOgLibrary with the edge file already in the output", () => {
+  // Turbopack traces `index.edge.js`: `copyTracedFiles` has already copied the original file
+  beforeAll(() => {
+    mockFs();
+
+    mkdirSync(nodeModulesVercelOgDir, { recursive: true });
+    mkdirSync(path.dirname(nextServerOgNftPath), { recursive: true });
+    mkdirSync(path.dirname(openNextOgRoutePath), { recursive: true });
+    mkdirSync(openNextVercelOgDir, { recursive: true });
+
+    const originalEdge = `var fallbackFont = fetch(new URL("./Geist-Regular.ttf", import.meta.url)).then((res) => res.arrayBuffer());`;
+    writeFileSync(
+      nextServerOgNftPath,
+      JSON.stringify({ version: 1, files: [`../../../../../../${nodeModulesVercelOgDir}/index.node.js`] })
+    );
+    writeFileSync(path.join(nodeModulesVercelOgDir, "index.edge.js"), originalEdge);
+    writeFileSync(openNextOgRoutePath, `e.exports=import("next/dist/compiled/@vercel/og/index.node.js")`);
+    writeFileSync(path.join(openNextVercelOgDir, "index.node.js"), "");
+    writeFileSync(path.join(openNextVercelOgDir, "index.edge.js"), originalEdge);
+    writeFileSync(path.join(openNextVercelOgDir, "Geist-Regular.ttf"), "");
+  });
+
+  afterAll(() => mockFs.restore());
+
+  it("should still patch the fallback font", () => {
+    patchVercelOgLibrary(buildOpts);
+
+    expect(readdirSync(openNextVercelOgDir)).toContain("Geist-Regular.ttf.bin");
+    expect(readdirSync(openNextVercelOgDir)).not.toContain("Geist-Regular.ttf");
+
+    const edge = readFileSync(path.join(openNextVercelOgDir, "index.edge.js"), { encoding: "utf-8" });
+    expect(edge).toContain(`await import("./Geist-Regular.ttf.bin")`);
+    expect(edge).not.toContain("import.meta.url");
+  });
+});

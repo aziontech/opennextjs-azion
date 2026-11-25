@@ -53,15 +53,26 @@ export function patchVercelOgLibrary(buildOpts: BuildOptions) {
       if (existsSync(tracedYogaPath)) {
         copyFileSync(tracedYogaPath, path.join(outputDir, "yoga.wasm"));
       }
+    }
 
-      // Change font fetches in the library to use imports.
+    // Change font fetches in the library to use imports.
+    //
+    // This must not depend on the edge file having just been copied: Turbopack traces it, so
+    // `copyTracedFiles` has already put the original file in the output. Without the patch,
+    // `fetch(new URL("./font.ttf", import.meta.url))` is kept and fails at runtime.
+    //
+    // Once patched the rule does not match anymore, so this is a no-op for the next traces.
+    {
       const node = parseFile(outputEdgePath);
       const { edits, matches } = patchVercelOgFallbackFont(node);
-      writeFileSync(outputEdgePath, node.commitEdits(edits));
-
       if (matches.length > 0) {
+        writeFileSync(outputEdgePath, node.commitEdits(edits));
+
         const fontFileName = matches[0]!.getMatch("PATH")!.text();
-        renameSync(path.join(outputDir, fontFileName), path.join(outputDir, `${fontFileName}.bin`));
+        const fontPath = path.join(outputDir, fontFileName);
+        if (existsSync(fontPath)) {
+          renameSync(fontPath, path.join(outputDir, `${fontFileName}.bin`));
+        }
       }
     }
     // Patch Yoga
