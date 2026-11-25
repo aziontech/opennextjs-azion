@@ -1,5 +1,28 @@
 # @aziontech/opennextjs-azion
 
+## 1.2.0
+
+### Minor Changes
+
+- [#91](https://github.com/aziontech/opennextjs-azion/pull/91) [`1c7df5b`](https://github.com/aziontech/opennextjs-azion/commit/1c7df5bd434c25f17db9e173b5ddeda3aae1a6f6) Thanks [@jose-filho-azion](https://github.com/jose-filho-azion)! - feature: support Turbopack builds
+
+  Next.js 16 builds with Turbopack by default: the adapter no longer forces `--webpack` and runs the build command of the project as is. Projects that want to keep using webpack can add the flag to their build script.
+
+  - the dynamic chunk requires of the Turbopack runtime are inlined so that they are statically bundled
+  - the `.wasm` chunks are loaded from the files copied to the assets
+  - `process.env.TURBOPACK` is no longer forced to `false` for Turbopack builds
+  - the Node.js middleware (`proxy.ts`) is supported with both webpack and Turbopack
+
+### Patch Changes
+
+- [#89](https://github.com/aziontech/opennextjs-azion/pull/89) [`f623a28`](https://github.com/aziontech/opennextjs-azion/commit/f623a2853cf9d91e154104ee63e3fa10d25eb1c1) Thanks [@jose-filho-azion](https://github.com/jose-filho-azion)! - feature: support Node.js middleware (`proxy.ts`)
+
+  Next.js 16 replaces `middleware.ts` with `proxy.ts`, which always runs on the Node.js runtime.
+
+  The Node.js middleware is now bundled into a self-contained `middleware/handler.mjs`: the OpenNext config manifests are inlined at build time (as for the edge middleware) and the middleware compiled by Next.js is statically bundled instead of being loaded from the filesystem at runtime.
+
+  The support is experimental.
+
 ## 1.1.6
 
 ### Patch Changes
