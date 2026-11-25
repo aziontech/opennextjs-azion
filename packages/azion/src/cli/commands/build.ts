@@ -14,11 +14,13 @@ import { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
 
 import { compileTagAssets } from "../../api/compile-tag-assets.js";
 import { bundleServer } from "../../core/build/bundle-server.js";
+import { bundleNodeMiddleware } from "../../core/build/open-next/bundle-node-middleware.js";
 import { compileEnvFiles } from "../../core/build/open-next/compile-env-files.js";
 import { compileInit } from "../../core/build/open-next/compile-init.js";
 import { createServerBundle } from "../../core/build/open-next/createServerBundle.js";
 import { updateMiddlewareBundledCode } from "../../core/build/patches/plugins/patch-rewrite-router.js";
 import { alignCacheAssetsBuildId } from "../../core/build/utils/align-cache-build-id.js";
+import { useNodeMiddleware } from "../../core/build/utils/middleware.js";
 import { getVersion } from "../../core/build/utils/version.js";
 import type { ProjectOptions } from "../../core/project-options.js";
 
@@ -58,6 +60,11 @@ export async function build(
     buildNextjsApp(options);
   }
 
+  const hasNodeMiddleware = useNodeMiddleware(options);
+  if (hasNodeMiddleware) {
+    logger.warn("Node.js middleware (`proxy.ts`) support is experimental. Use at your own risk.");
+  }
+
   // Generate deployable bundle
   printHeader("Generating bundle");
   buildHelper.initOutputDir(options);
@@ -73,6 +80,12 @@ export async function build(
 
   // Compile middleware
   await createMiddleware(options, { forceOnlyBuildOnce: true });
+
+  // The Node.js middleware built by `createMiddleware()` targets a Node.js server,
+  // re-bundle it so that it can run on the Azion runtime.
+  if (hasNodeMiddleware) {
+    await bundleNodeMiddleware(options);
+  }
   await updateMiddlewareBundledCode(options);
 
   createStaticAssets(options);

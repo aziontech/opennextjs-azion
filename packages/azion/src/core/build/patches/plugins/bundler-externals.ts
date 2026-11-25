@@ -50,7 +50,11 @@ export function setBundlerExternal(buildOpts: BuildOptions) {
         // TODO: this is a workaround to move the files to the correct location
         // the future move will be done by the bundler or by the build process
         try {
-          fs.copyFileSync(filePath, path.join(buildOpts.outputDir, "assets", fileNameWithoutQuery));
+          // The assets directory is created by `createStaticAssets`, which runs after the
+          // Node.js middleware is bundled: make sure it exists before copying.
+          const assetsDir = path.join(buildOpts.outputDir, "assets");
+          fs.mkdirSync(assetsDir, { recursive: true });
+          fs.copyFileSync(filePath, path.join(assetsDir, fileNameWithoutQuery));
         } catch (error) {
           console.error(error);
         }
