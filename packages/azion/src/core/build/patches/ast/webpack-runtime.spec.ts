@@ -2,10 +2,14 @@
  * This code was originally copied and modified from the @opennextjs/cloudflare repository.
  * Significant changes have been made to adapt it for use with Azion.
  */
-import { patchCode } from "@opennextjs/aws/build/patch/astCodePatcher.js";
-import { describe, expect, test } from "vitest";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-import { buildMultipleChunksRule, singleChunkRule } from "./webpack-runtime.js";
+import { patchCode } from "@opennextjs/aws/build/patch/astCodePatcher.js";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+
+import { buildMultipleChunksRule, patchWebpackRuntime, singleChunkRule } from "./webpack-runtime.js";
 
 describe("webpack runtime", () => {
   describe("multiple chunks", () => {
@@ -112,6 +116,47 @@ describe("webpack runtime", () => {
 
               "
       `);
+    });
+  });
+
+  describe("patchWebpackRuntime", () => {
+    const runtime = `t.f.require=(o,n)=>{e[o]||(658!=o?r(require("./chunks/"+t.u(o))):e[o]=1)}`;
+    let tmpDir: string;
+
+    beforeEach(() => {
+      tmpDir = mkdtempSync(join(tmpdir(), "webpack-runtime-test-"));
+      mkdirSync(join(tmpDir, "chunks"));
+      writeFileSync(join(tmpDir, "webpack-runtime.js"), runtime);
+      for (const chunk of ["1.js", "2.js", "other.js"]) {
+        writeFileSync(join(tmpDir, "chunks", chunk), "");
+      }
+    });
+
+    afterEach(() => {
+      rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    test("inlines all the numbered chunks by default", async () => {
+      await patchWebpackRuntime(tmpDir);
+      const patched = readFileSync(join(tmpDir, "webpack-runtime.js"), "utf-8");
+
+      expect(patched).toContain(`case 1: r(require("./chunks/1.js"))`);
+      expect(patched).toContain(`case 2: r(require("./chunks/2.js"))`);
+      expect(patched).not.toContain("other.js");
+    });
+
+    test("inlines the given chunks only", async () => {
+      await patchWebpackRuntime(tmpDir, ["2.js"]);
+      const patched = readFileSync(join(tmpDir, "webpack-runtime.js"), "utf-8");
+
+      expect(patched).not.toContain(`./chunks/1.js`);
+      expect(patched).toContain(`case 2: r(require("./chunks/2.js"))`);
+    });
+
+    test("does not fail without a chunks directory", async () => {
+      rmSync(join(tmpDir, "chunks"), { recursive: true });
+
+      await expect(patchWebpackRuntime(tmpDir)).resolves.toBeUndefined();
     });
   });
 });

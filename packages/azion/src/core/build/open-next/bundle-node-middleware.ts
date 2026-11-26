@@ -26,21 +26,73 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { builtinModules, isBuiltin } from "node:module";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { type BuildOptions, getBundlerRuntime, getPackagePath } from "@opennextjs/aws/build/helper.js";
 import logger from "@opennextjs/aws/logger.js";
+import { ContentUpdater } from "@opennextjs/aws/plugins/content-updater.js";
 import { openNextEdgePlugins } from "@opennextjs/aws/plugins/edge.js";
 import { openNextExternalMiddlewarePlugin } from "@opennextjs/aws/plugins/externalMiddleware.js";
 import { openNextReplacementPlugin } from "@opennextjs/aws/plugins/replacement.js";
 import { openNextResolvePlugin } from "@opennextjs/aws/plugins/resolve.js";
 import { getCrossPlatformPathRegex } from "@opennextjs/aws/utils/regex.js";
 import { build, type Plugin } from "esbuild";
-import { glob } from "glob";
 
 import { patchWebpackRuntime } from "../patches/ast/webpack-runtime.js";
 import { setBundlerExternal } from "../patches/plugins/bundler-externals.js";
+import { patchInstrumentation } from "../patches/plugins/instrumentation.js";
 import { patchTurbopackRuntimeCode } from "../patches/plugins/turbopack.js";
 import { normalizePath } from "../utils/normalize-path.js";
+
+/**
+ * Returns the chunks of the middleware compiled by Next.js, from its trace.
+ *
+ * `@opennextjs/aws` also copies to the middleware output the files traced for other entries, i.e. the
+ * `instrumentation.ts` hook. Those must not be bundled: the middleware does not load the hook, the server does.
+ * Bundling them also makes the build fail when they import packages that can not be resolved
+ * with the conditions used for the middleware (i.e. `Could not resolve "#util"`).
+ *
+ * @param tracePath Path to the `.nft.json` trace of the middleware.
+ * @param dotNextServerDir The `.next/server` directory of the middleware output.
+ * @returns The `.js` and `.wasm` files of the trace in `.next/server/chunks`, that exist in the output.
+ * @throws When the trace can not be read.
+ */
+export function getMiddlewareChunks(tracePath: string, dotNextServerDir: string): string[] {
+  const chunksDir = normalizePath(path.join(dotNextServerDir, "chunks"));
+  const { files } = JSON.parse(readFileSync(tracePath, "utf-8")) as { files: string[] };
+  return files
+    .map((file) => normalizePath(path.join(dotNextServerDir, file)))
+    .filter((file) => file.startsWith(`${chunksDir}/`) && /\.(js|wasm)$/.test(file) && existsSync(file));
+}
+
+/**
+ * Returns the aliases replacing the Next.js modules that the middleware does not use.
+ *
+ * @param shimsDir The directory of the shims.
+ * @param usesOg Whether the middleware uses `@vercel/og`.
+ * @returns The esbuild aliases.
+ */
+export function getMiddlewareShimAliases(shimsDir: string, usesOg: boolean): Record<string, string> {
+  return {
+    // When `@vercel/og` is not used, alias the edge entry to a throwing shim so that the
+    // `import("next/dist/compiled/@vercel/og/index.edge.js")` emitted by the Turbopack runtime patch does not
+    // drag the library (~800 KiB) and its `resvg.wasm` and `yoga.wasm` into the bundle.
+    ...(usesOg ? {} : { "next/dist/compiled/@vercel/og/index.edge.js": path.join(shimsDir, "throw.js") }),
+  };
+}
+
+/**
+ * Returns whether the middleware uses `@vercel/og`, from its trace.
+ *
+ * `next/server` references the library for `ImageResponse` but Next.js only traces it
+ * (`@vercel/og/index.node.js`) when the middleware imports it.
+ *
+ * @param tracePath Path to the `.nft.json` trace of the middleware.
+ */
+export function middlewareUsesOg(tracePath: string): boolean {
+  const { files } = JSON.parse(readFileSync(tracePath, "utf-8")) as { files: string[] };
+  return files.some((file) => normalizePath(file).endsWith("@vercel/og/index.node.js"));
+}
 
 /**
  * Inlines the chunks of the middleware compiled by Next.js.
@@ -50,11 +102,21 @@ import { normalizePath } from "../utils/normalize-path.js";
  *
  * @param options Build options.
  * @param dotNextServerDir The `.next/server` directory of the middleware output.
+ * @param chunks The chunks of the middleware, see {@link getMiddlewareChunks}.
  * @throws When the Turbopack runtime can not be found.
  */
-async function inlineMiddlewareChunks(options: BuildOptions, dotNextServerDir: string): Promise<void> {
+async function inlineMiddlewareChunks(
+  options: BuildOptions,
+  dotNextServerDir: string,
+  chunks: string[]
+): Promise<void> {
+  const chunksDir = normalizePath(path.join(dotNextServerDir, "chunks"));
+
   if (getBundlerRuntime(options) !== "turbopack") {
-    await patchWebpackRuntime(dotNextServerDir);
+    await patchWebpackRuntime(
+      dotNextServerDir,
+      chunks.filter((chunk) => chunk.endsWith(".js")).map((chunk) => chunk.slice(chunksDir.length + 1))
+    );
     return;
   }
 
@@ -65,16 +127,14 @@ async function inlineMiddlewareChunks(options: BuildOptions, dotNextServerDir: s
 
   // The Turbopack runtime resolves the chunks relative to the `.next` directory.
   // `.wasm` chunks are needed too: they are loaded by `loadWasmChunk`.
-  const tracedFiles = await glob(path.join(dotNextServerDir, "**/*.{js,wasm}"), {
-    windowsPathsNoEscape: true,
-  });
-
   writeFileSync(
     runtimePath,
     patchTurbopackRuntimeCode({
       code: readFileSync(runtimePath, "utf-8"),
       filePath: normalizePath(runtimePath),
-      tracedFiles,
+      tracedFiles: chunks,
+      // The middleware does not load the packages that only the routes or the instrumentation use.
+      onlyUsedExternals: true,
     })
   );
 }
@@ -156,7 +216,7 @@ export const QUEUE_MICROTASK_POLYFILL = `if (typeof queueMicrotask === "undefine
  * Must run after `createMiddleware()`, which creates the output built for a Node.js server.
  *
  * @param options Build options.
- * @throws When the compiled middleware or the Turbopack runtime is missing.
+ * @throws When the compiled middleware, its trace or the Turbopack runtime is missing.
  */
 export async function bundleNodeMiddleware(options: BuildOptions): Promise<void> {
   const { config, outputDir } = options;
@@ -169,9 +229,20 @@ export async function bundleNodeMiddleware(options: BuildOptions): Promise<void>
     throw new Error(`Compiled Node.js middleware not found at ${compiledMiddleware}`);
   }
 
+  // Both `middleware.ts/js` and `proxy.ts/js` emit `middleware.js` and its `.nft.json` trace.
+  const tracePath = path.join(options.appBuildOutputPath, ".next/server/middleware.js.nft.json");
+  if (!existsSync(tracePath)) {
+    throw new Error(`Trace of the Node.js middleware not found at ${tracePath}`);
+  }
+
   // The bundler runtime resolves the chunks of the middleware at runtime, which the Azion
   // runtime does not support. Inline the chunks so that they are statically bundled.
-  await inlineMiddlewareChunks(options, dotNextServerDir);
+  await inlineMiddlewareChunks(options, dotNextServerDir, getMiddlewareChunks(tracePath, dotNextServerDir));
+
+  // Only the trace of the middleware is checked: a server route using OG should not pull it into the middleware.
+  const usesOg = middlewareUsesOg(tracePath);
+  // The server bundle (and its shims) is built after the middleware, so the shims are taken from the package dist.
+  const shimsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../runtime/shims");
 
   logger.info("Bundling Node.js middleware...");
 
@@ -196,21 +267,30 @@ export async function bundleNodeMiddleware(options: BuildOptions): Promise<void>
     path.join(options.appBuildOutputPath, "node_modules", "@opentelemetry", "api")
   );
 
-  await build({
+  const updater = new ContentUpdater(options);
+  const outfile = path.join(middlewareDir, "handler.mjs");
+
+  const result = await build({
     entryPoints: [path.join(options.openNextDistDir, "adapters", "middleware.js")],
-    outfile: path.join(middlewareDir, "handler.mjs"),
+    outfile,
+    metafile: true,
     allowOverwrite: true,
     bundle: true,
     format: "esm",
     target: "es2022",
-    platform: "neutral",
+    // Same resolution as the server: Next.js traced the files with the default conditions of `nft`
+    // (`node`, `require`, `import` and `default`), other conditions would resolve files that
+    // are not in the output (i.e. the `module` condition and field).
+    // See `bundle-server.ts`.
+    platform: "node",
+    conditions: [],
+    // Not minified here, as the server: the bundler minifies the worker, see `build.ts`.
     minify: options.minify,
     sourcemap: options.debug ? "inline" : false,
     sourcesContent: false,
     treeShaking: true,
-    conditions: ["module"],
-    mainFields: ["module", "main"],
-    external: ["node:*", "./open-next.config.mjs"],
+    // Node.js builtins are handled by `nodeBuiltinsPlugin`.
+    external: ["./open-next.config.mjs"],
     define: {
       // The base of the middleware compiled by Next.js is runtime agnostic. "edge" selects its
       // Web API code paths (which the Azion runtime supports) over the Node.js server paths (which it
@@ -220,6 +300,7 @@ export async function bundleNodeMiddleware(options: BuildOptions): Promise<void>
       "process.env.NODE_ENV": '"production"',
     },
     alias: {
+      ...getMiddlewareShimAliases(shimsDir, usesOg),
       // See `hasOpentelemetry` above.
       ...(hasOpentelemetry ? {} : { "@opentelemetry/api": "next/dist/compiled/@opentelemetry/api" }),
     },
@@ -259,6 +340,14 @@ export async function bundleNodeMiddleware(options: BuildOptions): Promise<void>
         nextDir: path.join(options.appBuildOutputPath, ".next"),
         isInCloudflare: true,
       }),
+      // The guard Next.js uses (`process.env.NEXT_RUNTIME !== "edge"`) is inlined to `"nodejs"`
+      // when Next.js compiles the middleware, so the `define` above can not eliminate the branch.
+      // The module registering the hook is stubbed out instead, which matches what the edge runtime
+      // does here: it has no instrumentation entry to register, and the server function - which
+      // shares the worker - already registers the hook.
+      patchInstrumentation(updater, options, { loadInstrumentation: false }),
+      // Apply updater updates, must be the last plugin
+      updater.plugin,
     ] as Plugin[],
     banner: {
       js: `
@@ -290,4 +379,6 @@ globalThis.nextVersion = "${options.nextVersion}";
 `,
     },
   });
+
+  writeFileSync(`${outfile}.meta.json`, JSON.stringify(result.metafile, null, 2));
 }

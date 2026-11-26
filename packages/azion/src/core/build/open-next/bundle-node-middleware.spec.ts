@@ -1,11 +1,20 @@
 import { execFile } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { promisify } from "node:util";
 import vm from "node:vm";
 
 import { build, type BuildOptions } from "esbuild";
-import { describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
-import { nodeBuiltinsPlugin, QUEUE_MICROTASK_POLYFILL } from "./bundle-node-middleware.js";
+import {
+  getMiddlewareChunks,
+  getMiddlewareShimAliases,
+  middlewareUsesOg,
+  nodeBuiltinsPlugin,
+  QUEUE_MICROTASK_POLYFILL,
+} from "./bundle-node-middleware.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -13,7 +22,8 @@ const execFileAsync = promisify(execFile);
  * Bundles `contents` with `nodeBuiltinsPlugin` installed.
  *
  * Mirrors the esbuild options `bundleNodeMiddleware` uses, as the plugin behaviour depends on
- * them: `platform: "neutral"` means esbuild does not handle the Node.js builtins itself.
+ * them: the plugin has to take over the Node.js builtins that esbuild would otherwise handle itself
+ * with `platform: "node"`.
  *
  * @param contents Source of the entry point, treated as CommonJS.
  * @param options Extra esbuild options.
@@ -24,7 +34,8 @@ async function bundle(contents: string, options: BuildOptions = {}): Promise<str
     stdin: { contents, loader: "js", resolveDir: import.meta.dirname },
     bundle: true,
     format: "esm",
-    platform: "neutral",
+    platform: "node",
+    conditions: [],
     target: "es2022",
     write: false,
     logLevel: "silent",
@@ -183,5 +194,117 @@ describe("QUEUE_MICROTASK_POLYFILL", () => {
     vm.runInContext(QUEUE_MICROTASK_POLYFILL, context);
 
     expect(context.queueMicrotask).toBe(native);
+  });
+});
+
+describe("getMiddlewareChunks", () => {
+  let tmpDir: string;
+  let serverDir: string;
+  let tracePath: string;
+
+  function write(file: string) {
+    const filePath = path.join(serverDir, file);
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, "");
+  }
+
+  function trace(files: string[]) {
+    fs.writeFileSync(tracePath, JSON.stringify({ version: 1, files }));
+  }
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "middleware-chunks-"));
+    serverDir = path.join(tmpDir, ".next/server");
+    tracePath = path.join(tmpDir, "middleware.js.nft.json");
+    fs.mkdirSync(serverDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  test("returns the traced js and wasm chunks", () => {
+    for (const file of ["chunks/a.js", "chunks/b.wasm", "chunks/[turbopack]_runtime.js"]) write(file);
+    trace(["./chunks/a.js", "./chunks/b.wasm", "./chunks/[turbopack]_runtime.js"]);
+
+    expect(getMiddlewareChunks(tracePath, serverDir).sort()).toEqual(
+      ["chunks/[turbopack]_runtime.js", "chunks/a.js", "chunks/b.wasm"].map((file) =>
+        path.join(serverDir, file).replaceAll("\\", "/")
+      )
+    );
+  });
+
+  test("ignores the chunks copied for another entry, i.e. the instrumentation hook", () => {
+    for (const file of ["chunks/middleware.js", "chunks/instrumentation.js"]) write(file);
+    trace(["./chunks/middleware.js"]);
+
+    expect(getMiddlewareChunks(tracePath, serverDir)).toEqual([
+      path.join(serverDir, "chunks/middleware.js").replaceAll("\\", "/"),
+    ]);
+  });
+
+  test("ignores the traced files that are not chunks", () => {
+    for (const file of [
+      "chunks/a.js",
+      "chunks/a.js.map",
+      "middleware.js",
+      "../../node_modules/pkg/index.js",
+    ]) {
+      write(file);
+    }
+    trace(["./chunks/a.js", "./chunks/a.js.map", "./middleware.js", "../../node_modules/pkg/index.js"]);
+
+    expect(getMiddlewareChunks(tracePath, serverDir)).toHaveLength(1);
+  });
+
+  test("ignores the traced chunks that are missing in the output", () => {
+    write("chunks/a.js");
+    trace(["./chunks/a.js", "./chunks/missing.js"]);
+
+    expect(getMiddlewareChunks(tracePath, serverDir)).toHaveLength(1);
+  });
+
+  test("throws when the trace can not be read", () => {
+    expect(() => getMiddlewareChunks(tracePath, serverDir)).toThrow();
+  });
+});
+
+describe("middlewareUsesOg", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "middleware-og-"));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  function trace(files: string[]) {
+    const tracePath = path.join(tmpDir, "middleware.js.nft.json");
+    fs.writeFileSync(tracePath, JSON.stringify({ version: 1, files }));
+    return tracePath;
+  }
+
+  test("is true when `@vercel/og` is traced", () => {
+    expect(middlewareUsesOg(trace(["../../node_modules/next/dist/compiled/@vercel/og/index.node.js"]))).toBe(
+      true
+    );
+  });
+
+  test("is false when `@vercel/og` is not traced", () => {
+    expect(middlewareUsesOg(trace(["../../node_modules/next/dist/compiled/next-server/app.js"]))).toBe(false);
+  });
+});
+
+describe("getMiddlewareShimAliases", () => {
+  const og = "next/dist/compiled/@vercel/og/index.edge.js";
+
+  test("aliases `@vercel/og` to the throwing shim when it is not used", () => {
+    expect(getMiddlewareShimAliases("/shims", false)[og]).toBe(path.join("/shims", "throw.js"));
+  });
+
+  test("does not alias `@vercel/og` when it is used", () => {
+    expect(getMiddlewareShimAliases("/shims", true)).not.toHaveProperty([og]);
   });
 });
