@@ -77,17 +77,18 @@ fix: |
  * the webpack dynamic requires.
  *
  * @param dotNextServerDir The `.next/server` directory to patch.
+ * @param chunkFiles The chunk files to inline, relative to the `chunks` directory (i.e. `123.js`).
+ *   Defaults to all the numbered chunks of the directory. Files that are not numbered chunks are ignored.
  */
-export async function patchWebpackRuntime(dotNextServerDir: string) {
-  // Look for all the chunks.
+export async function patchWebpackRuntime(dotNextServerDir: string, chunkFiles?: string[]) {
+  // Look for all the chunks, unless the caller knows which ones are needed.
   const chunksDir = join(dotNextServerDir, "chunks");
-  const chunks = existsSync(chunksDir)
-    ? readdirSync(chunksDir)
-        .filter((chunk) => /^\d+\.js$/.test(chunk))
-        .map((chunk) => {
-          return Number(chunk.replace(/\.js$/, ""));
-        })
-    : [];
+  const files = chunkFiles ?? (existsSync(chunksDir) ? readdirSync(chunksDir) : []);
+  const chunks = files
+    .filter((chunk) => /^\d+\.js$/.test(chunk))
+    .map((chunk) => {
+      return Number(chunk.replace(/\.js$/, ""));
+    });
 
   patchFile(join(dotNextServerDir, "webpack-runtime.js"), chunks);
   patchFile(join(dotNextServerDir, "webpack-api-runtime.js"), chunks);

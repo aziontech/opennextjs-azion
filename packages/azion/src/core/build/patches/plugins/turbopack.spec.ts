@@ -7,6 +7,7 @@ import { build } from "esbuild";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import {
+  filterUsedExternalMappings,
   loadWasmChunkFn,
   packageNameFromSymlinkTarget,
   patchTurbopackRuntime,
@@ -361,5 +362,116 @@ export const sub = externalImport("postgres-abc/sub");
     expect(output).toContain("index-for-workerd");
     expect(output).toContain("sub-for-workerd");
     expect(output).not.toContain("for-node");
+  });
+});
+
+describe("filterUsedExternalMappings", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "turbopack-used-externals-"));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  function chunk(name: string, content: string) {
+    const file = path.join(tmpDir, ".next/server/chunks", name).replaceAll("\\", "/");
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, content);
+    return file;
+  }
+
+  const mappings = new Map([
+    ["used-abc", "used-abc"],
+    ["subpath-def", "subpath-def"],
+    ["unused-123", "unused-123"],
+  ]);
+
+  test("keeps the packages referenced by the chunks, bare or with a subpath", () => {
+    const files = [
+      chunk("[externals]_used.js", 'a.y("used-abc"); b.y("subpath-def/wasm");'),
+      chunk("other.js", "1"),
+    ];
+
+    expect([...filterUsedExternalMappings(mappings, files).keys()]).toEqual(["used-abc", "subpath-def"]);
+  });
+
+  test("ignores the packages only referenced by chunks that are not traced", () => {
+    chunk("[externals]_unused.js", 'a.y("unused-123");');
+    const files = [chunk("[externals]_used.js", 'a.y("used-abc");')];
+
+    expect([...filterUsedExternalMappings(mappings, files).keys()]).toEqual(["used-abc"]);
+  });
+
+  test("does not match a package whose id only starts like another one", () => {
+    const files = [chunk("[externals]_used.js", 'a.y("used-abcdef");')];
+
+    expect(filterUsedExternalMappings(mappings, files).size).toBe(0);
+  });
+
+  test("ignores the Turbopack runtime, which lists the modules it patches", () => {
+    const files = [chunk("[turbopack]_runtime.js", 'case "used-abc": break;')];
+
+    expect(filterUsedExternalMappings(mappings, files).size).toBe(0);
+  });
+
+  test("ignores the files that can not be read", () => {
+    const missing = path.join(tmpDir, ".next/server/chunks/missing.js").replaceAll("\\", "/");
+
+    expect(filterUsedExternalMappings(mappings, [missing]).size).toBe(0);
+  });
+});
+
+describe("patchTurbopackRuntimeCode onlyUsedExternals", () => {
+  let tmpDir: string;
+  let runtimePath: string;
+  const code = `async function externalImport(id) {
+  let raw;
+  try {
+    raw = await import(id);
+  } catch (err) {
+    throw err;
+  }
+  return raw;
+}`;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "turbopack-only-used-"));
+    const dotNext = path.join(tmpDir, ".next");
+    runtimePath = path.join(dotNext, "server/chunks/[turbopack]_runtime.js").replaceAll("\\", "/");
+    fs.mkdirSync(path.dirname(runtimePath), { recursive: true });
+    fs.mkdirSync(path.join(dotNext, "node_modules"), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, "node_modules/used"), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, "node_modules/unused"), { recursive: true });
+    fs.symlinkSync("../../node_modules/used", path.join(dotNext, "node_modules/used-abc"), "dir");
+    fs.symlinkSync("../../node_modules/unused", path.join(dotNext, "node_modules/unused-123"), "dir");
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  test("only maps the packages used by the traced chunks", () => {
+    const chunk = path.join(path.dirname(runtimePath), "[externals]_used.js").replaceAll("\\", "/");
+    fs.writeFileSync(chunk, 'a.y("used-abc");');
+
+    const patched = patchTurbopackRuntimeCode({
+      code,
+      filePath: runtimePath,
+      tracedFiles: [chunk],
+      onlyUsedExternals: true,
+    });
+
+    expect(patched).toContain('case "used-abc"');
+    expect(patched).not.toContain("unused-123");
+  });
+
+  test("maps all the packages of the app by default", () => {
+    const patched = patchTurbopackRuntimeCode({ code, filePath: runtimePath, tracedFiles: [] });
+
+    expect(patched).toContain('case "used-abc"');
+    expect(patched).toContain('case "unused-123"');
   });
 });

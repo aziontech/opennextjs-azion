@@ -147,3 +147,11 @@ To keep building with webpack, add the `--webpack` flag to the build script of y
 Next.js 16 replaces `middleware.ts` with `proxy.ts`, which always runs on the Node.js runtime. OpenNext for Azion bundles it into a self-contained middleware for both webpack and Turbopack builds.
 
 This support is experimental: it re-bundles the middleware compiled by Next.js, which is an internal output that can change between Next.js versions. The build logs a warning when a Node.js middleware is detected.
+
+The middleware bundle only includes what the middleware uses:
+
+- Only the chunks listed in the trace of the middleware (`middleware.js.nft.json`) are bundled. The files traced for `instrumentation.ts` (and the `serverExternalPackages` only it or a route uses) are not: the server registers the instrumentation hook.
+- `@vercel/og` is replaced with a stub unless the middleware imports it (`next/og`, `ImageResponse`). A `proxy.ts` returning an `ImageResponse` is not supported yet: its fonts are not bundled.
+- Packages are resolved like in the server bundle.
+
+The esbuild metafile is written to `.open-next/middleware/handler.mjs.meta.json` to analyze the size of the bundle.

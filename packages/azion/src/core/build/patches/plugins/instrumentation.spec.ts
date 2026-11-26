@@ -2,10 +2,12 @@
  * This code was originally copied and modified from the @opennextjs/cloudflare repository.
  * Significant changes have been made to adapt it for use with Azion.
  */
+import vm from "node:vm";
+
 import { patchCode } from "@opennextjs/aws/build/patch/astCodePatcher.js";
 import { describe, expect, test } from "vitest";
 
-import { getNext14Rule, getNext15Rule } from "./instrumentation.js";
+import { getNext14Rule, getNext15Rule, noopInstrumentationGlobals } from "./instrumentation.js";
 
 describe("LoadInstrumentationModule (Next15)", () => {
   const code = `
@@ -98,5 +100,30 @@ describe("prepareImpl (Next14)", () => {
             }
           "
     `);
+  });
+});
+
+describe("noopInstrumentationGlobals", () => {
+  function load() {
+    const module = { exports: {} as Record<string, unknown> };
+    vm.runInNewContext(noopInstrumentationGlobals, { module });
+    return module.exports as Record<string, (...args: unknown[]) => Promise<void>>;
+  }
+
+  test("replaces whatever export Next.js calls with an async no-op", async () => {
+    const globals = load();
+
+    // The exports differ between Next.js versions
+    await expect(globals.ensureInstrumentationRegistered?.()).resolves.toBeUndefined();
+    await expect(globals.ensureInstrumentationRegisteredWithDeferredSpans?.()).resolves.toBeUndefined();
+    await expect(globals.getInstrumentationModule?.("dir", "dist")).resolves.toBeUndefined();
+  });
+
+  test("is not taken for a thenable", async () => {
+    const globals = load();
+
+    expect((globals as { then?: unknown }).then).toBeUndefined();
+    // Resolving a promise with the module must not wait for a `then` that never settles.
+    await expect(Promise.resolve(globals)).resolves.toBe(globals);
   });
 });

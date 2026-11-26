@@ -354,6 +354,47 @@ function discoverExternalSubpaths(mappings: Map<string, string>, tracedFiles: st
 }
 
 /**
+ * Keeps the external module mappings that are referenced by the given chunks.
+ *
+ * Turbopack links every external package of the app in `.next/node_modules`, not only those used by an entry.
+ * Bundling all of them would pull into an entry the packages that only another entry uses (i.e. a route
+ * or the `instrumentation.ts` hook), even though the chunks it loads never reference them.
+ *
+ * A package is referenced when its hashed id appears as a string in a chunk, bare (`"shiki-43d0"`)
+ * or with a subpath (`"shiki-43d0/wasm"`).
+ *
+ * @param mappings The mappings, see {@link discoverExternalModuleMappings}.
+ * @param tracedFiles The files traced for the entry, only its chunks are read.
+ * @returns The mappings referenced by the chunks.
+ */
+export function filterUsedExternalMappings(
+  mappings: Map<string, string>,
+  tracedFiles: string[]
+): Map<string, string> {
+  if (mappings.size === 0) {
+    return mappings;
+  }
+
+  const contents = tracedFiles
+    .filter((file) => file.includes(".next/server/chunks/") && file.endsWith(".js"))
+    // The runtime lists the modules it patches: it does not use them.
+    .filter((file) => !path.basename(file).startsWith("[turbopack]_runtime"))
+    .flatMap((file) => {
+      try {
+        return [fs.readFileSync(file, "utf-8")];
+      } catch {
+        return [];
+      }
+    });
+
+  return new Map(
+    [...mappings].filter(([hashedName]) =>
+      contents.some((content) => content.includes(`"${hashedName}"`) || content.includes(`"${hashedName}/`))
+    )
+  );
+}
+
+/**
  * Inline the dynamic chunk requires of the Turbopack runtime.
  *
  * The runtime resolves the chunks it needs at runtime, which workerd does not support.
@@ -362,21 +403,29 @@ function discoverExternalSubpaths(mappings: Map<string, string>, tracedFiles: st
  * @param code The code of the Turbopack runtime.
  * @param filePath Path to the Turbopack runtime, in the OpenNext output.
  * @param tracedFiles The files traced by Next.js, copied next to the runtime.
+ * @param onlyUsedExternals Only maps the external packages that the traced chunks reference, see
+ *   {@link filterUsedExternalMappings}. The default maps all the external packages of the app,
+ *   for an entry that can load any of them (the server).
  * @returns The patched code.
  */
 export function patchTurbopackRuntimeCode({
   code,
   filePath,
   tracedFiles,
+  onlyUsedExternals = false,
 }: {
   code: string;
   filePath: string;
   tracedFiles: string[];
+  onlyUsedExternals?: boolean;
 }): string {
   tracedFiles = tracedFiles.map(normalizePath);
   filePath = normalizePath(filePath);
 
-  const mappings = discoverExternalModuleMappings(filePath);
+  let mappings = discoverExternalModuleMappings(filePath);
+  if (onlyUsedExternals) {
+    mappings = filterUsedExternalMappings(mappings, tracedFiles);
+  }
   const externalImportRule = buildExternalImportRule(mappings, tracedFiles, code);
   let patched = patchCode(code, externalImportRule);
   patched = patchCode(patched, inlineChunksRule);
