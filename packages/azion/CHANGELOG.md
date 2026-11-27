@@ -1,5 +1,23 @@
 # @aziontech/opennextjs-azion
 
+## 1.2.1
+
+### Patch Changes
+
+- [#95](https://github.com/aziontech/opennextjs-azion/pull/95) [`d2fb908`](https://github.com/aziontech/opennextjs-azion/commit/d2fb908f09cdb69ae821e3c2c1d0f98bd787675d) Thanks [@jose-filho-azion](https://github.com/jose-filho-azion)! - refactor: use the runtime polyfills of `@aziontech/unenv-preset` instead of the ones in the adapter
+
+  The adapter no longer patches `Buffer.prototype.indexOf`, `setImmediate`, `process.nextTick`, `AsyncLocalStorage.snapshot()` and `AsyncLocalStorage.bind()`, `reportError` and `performance.timeOrigin` at runtime. They are applied by the `@aziontech/unenv-preset` polyfills that the Azion bundler injects. The `performance-time-origin` module is no longer compiled next to `init.js`.
+
+  **Minimum version:** the application must be built with a bundler that includes `@aziontech/unenv-preset` **1.2.0** or later. That is `@aziontech/builder` 1.0.10 or later (and the `@aziontech/bundler` release that depends on it), which the Azion CLI uses to build the application. Update the Azion CLI before (or together with) this package.
+
+  With an older bundler the polyfills are missing: pages that render on demand (SSR, and ISR revalidation) fail with `500` and `TypeError: Cannot read properties of undefined (reading 'apply')` in `patchedSetImmediate`, and ISR pages are never revalidated. Check the build with `azbundler --version` or the version of the Azion CLI.
+
+- [#93](https://github.com/aziontech/opennextjs-azion/pull/93) [`5b4daf5`](https://github.com/aziontech/opennextjs-azion/commit/5b4daf59ef5422754ded6d0745c50fb6c14d4090) Thanks [@jose-filho-azion](https://github.com/jose-filho-azion)! - fix: reduce the Node.js middleware (`proxy.ts`) bundle size and resolve its packages like the server
+
+  The middleware bundle no longer includes `@vercel/og` (unless the middleware imports it), the chunks and external packages used by `instrumentation.ts` or the routes, and the instrumentation registration of Next.js. This fixes `Could not resolve "#util"` (and similar) when `instrumentation.ts` imports a package with conditional imports.
+
+  The esbuild metafile is now written to `.open-next/middleware/handler.mjs.meta.json`.
+
 ## 1.2.0
 
 ### Minor Changes
