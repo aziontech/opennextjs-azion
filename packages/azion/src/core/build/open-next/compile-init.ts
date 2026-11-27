@@ -16,15 +16,13 @@ export async function compileInit(options: BuildOptions) {
   const currentDir = path.join(path.dirname(fileURLToPath(import.meta.url)));
   const Dir = path.join(currentDir, "../../runtime");
   const initPath = path.join(Dir, "init.js");
-  // `init.js` is not bundled, so the local modules it imports must be compiled next to it
-  const performanceTimeOriginPath = path.join(Dir, "performance-time-origin.js");
 
   const nextConfig = loadConfig(path.join(options.appBuildOutputPath, ".next"));
   const basePath = nextConfig.basePath ?? "";
   const deploymentId = nextConfig.deploymentId ?? "";
 
   await build({
-    entryPoints: [initPath, performanceTimeOriginPath],
+    entryPoints: [initPath],
     outdir: path.join(options.outputDir, "azion"),
     bundle: false,
     minify: false,
